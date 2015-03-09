@@ -37,5 +37,10 @@
   		<artifactId>commons-lang3</artifactId>
   		<version>3.3.2</version>
   	</dependency>
+  	<dependency>
+  		<groupId>com.complexible.stardog</groupId>
+  		<artifactId>stardog-spring</artifactId>
+  		<version>2.2.4</version>
+  	</dependency>
   </dependencies>
 </project>
