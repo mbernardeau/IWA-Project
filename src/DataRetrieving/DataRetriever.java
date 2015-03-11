@@ -64,19 +64,30 @@ public class DataRetriever implements Job {
 				*/
 				// To close the connection
 				
-				SparqlQueryer DBPediaQueryer = new SparqlQueryer("http://dbpedia.org/sparql", aConn);
+				Prefixer.INSTANCE.addPrefix("dbpedia", "http://dbpedia.org/resource/");
+				Prefixer.INSTANCE.addPrefix("geo", "http://www.w3.org/2003/01/geo/wgs84_pos#");
+				Prefixer.INSTANCE.addPrefix("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
 				
+				SparqlConstructQueryer DBPediaQueryer = new SparqlConstructQueryer("http://dbpedia.org/sparql", aConn);
+				
+				/*
 				DBPediaQueryer.query(
-						"PREFIX dbpedia: <http://dbpedia.org/resource/>\n PREFIX geo: <http://www.w3.org/2003/01/geo/wgs84_pos#> CONSTRUCT{ dbpedia:Battle_of_Kursk ?relation ?data . dbpedia:Battle_of_Kursk geo:lat ?lat . dbpedia:Battle_of_Kursk geo:long ?long . } WHERE{   dbpedia:Battle_of_Kursk ?relation ?data. dbpedia:Battle_of_Kursk dbpedia-owl:place ?place .?place geo:lat ?lat ; geo:long ?long.}"
-						);
+					"\nCONSTRUCT{ dbpedia:Battle_of_Kursk ?relation ?data . dbpedia:Battle_of_Kursk geo:lat ?lat . dbpedia:Battle_of_Kursk geo:long ?long . } WHERE{   dbpedia:Battle_of_Kursk ?relation ?data. dbpedia:Battle_of_Kursk dbpedia-owl:place ?place .?place geo:lat ?lat ; geo:long ?long.}"
+				);
+				*/
+				DBPediaQueryer.query("CONSTRUCT{ ?battle ?relation ?data . } WHERE{  ?battle 	rdf:type 	yago:Battle100953559 ; 	?relation 	?data	.  FILTER(?relation != owl:sameAs)}");
 				
 				DBPediaQueryer.save();
 				
+				/*SparqlSelectQueryer DBPediaSelectQueryer = new SparqlSelectQueryer("http://dbpedia.org/sparql");
+				DBPediaSelectQueryer.query("SELECT ?battle WHERE {  ?battle 	rdf:type 	yago:Battle100953559 .}");
 				
+				while(DBPediaSelectQueryer.getResult().hasNext()){
+					System.out.println(DBPediaSelectQueryer.getResult().next().toString());
+				}
+				*/
 				aConn.close();
 				
-				// We're done with the example, so we need to make sure we shut down the server we started.
-				//aServer.stop();
 				
 			} catch (Exception e) {
 				throw new JobExecutionException(e);
