@@ -1,13 +1,9 @@
 package DataRetrieving;
 
-import org.openrdf.model.Graph;
-import org.openrdf.model.Resource;
-import org.openrdf.model.impl.ValueFactoryImpl;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
-import com.complexible.common.openrdf.model.Graphs;
 import com.complexible.stardog.api.Connection;
 import com.complexible.stardog.api.ConnectionConfiguration;
 import com.complexible.stardog.api.admin.AdminConnection;
@@ -23,7 +19,7 @@ public class DataRetriever implements Job {
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
 			try {
 				// Connect as an admin to the server
-				AdminConnection aAdminConnection = AdminConnectionConfiguration.toEmbeddedServer()
+				AdminConnection aAdminConnection = AdminConnectionConfiguration.toServer("snarl://localhost:5820")
                         .credentials("admin", "admin")
                         .connect();
 				
@@ -35,6 +31,7 @@ public class DataRetriever implements Job {
 				// Create a permanant database
 				aAdminConnection.disk("testConnectionAPI").create();
 				
+				
 				// Close the admin connection
 				aAdminConnection.close();
 				
@@ -42,6 +39,7 @@ public class DataRetriever implements Job {
 				Connection aConn = ConnectionConfiguration
 		                   .to("testConnectionAPI")
 		                   .credentials("admin", "admin")
+		                   .server("snarl://localhost:5820")
 		                   .connect();
 				aConn.begin();
 				
@@ -53,7 +51,7 @@ public class DataRetriever implements Job {
 				
 				
 				/// Example to create a new statement
-				Graph aGraph = (Graph) Graphs.newGraph(ValueFactoryImpl.getInstance()
+				/*Graph aGraph = (Graph) Graphs.newGraph(ValueFactoryImpl.getInstance()
                         .createStatement(ValueFactoryImpl.getInstance().createURI("urn:subj"),
                                          ValueFactoryImpl.getInstance().createURI("urn:pred"),
                                          ValueFactoryImpl.getInstance().createURI("urn:obj")));
@@ -63,8 +61,18 @@ public class DataRetriever implements Job {
 				// easily specify the context the data should be added to.  This will insert all of the statements
 				// in the `Graph` into the given context.
 				aConn.add().graph(aGraph, aContext);
-				
+				*/
 				// To close the connection
+				
+				SparqlQueryer DBPediaQueryer = new SparqlQueryer("http://dbpedia.org/sparql", aConn);
+				
+				DBPediaQueryer.query(
+						"PREFIX dbpedia: <http://dbpedia.org/resource/>\n PREFIX geo: <http://www.w3.org/2003/01/geo/wgs84_pos#> CONSTRUCT{ dbpedia:Battle_of_Kursk ?relation ?data . dbpedia:Battle_of_Kursk geo:lat ?lat . dbpedia:Battle_of_Kursk geo:long ?long . } WHERE{   dbpedia:Battle_of_Kursk ?relation ?data. dbpedia:Battle_of_Kursk dbpedia-owl:place ?place .?place geo:lat ?lat ; geo:long ?long.}"
+						);
+				
+				DBPediaQueryer.save();
+				
+				
 				aConn.close();
 				
 				// We're done with the example, so we need to make sure we shut down the server we started.
