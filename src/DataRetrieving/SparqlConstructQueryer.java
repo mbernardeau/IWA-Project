@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.openrdf.model.Statement;
 import org.openrdf.query.GraphQuery;
 import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.QueryResult;
 
 import com.complexible.stardog.StardogException;
 import com.complexible.stardog.api.Connection;
@@ -23,42 +24,48 @@ public class SparqlConstructQueryer extends SparqlQueryer<Statement> {
 		this.stardogConnection = stardogConnection;
 	}
 	
-	/**
-	 * Queries the service with the given query, and stores the result.
-	 * @param sparqlConstructQuery The query
-	 */
-	@Override
-	public void query(String sparqlConstructQuery){
-		try {
-			if(result != null)
-				result.close();
-				this.prepareQuery( sparqlConstructQuery);
-			if (query instanceof GraphQuery) {
-			    result = ((GraphQuery) query).evaluate();
-			}
-		} catch (QueryEvaluationException e) {
-			logger.error("The query could not be evaluated.\n", e);
-		}
-	}
 	
 	/**
 	 * Saves the result into the stardog local database
 	 */
 	void save(){
+		int i=0;
 		try {
-			while (result.hasNext()) {
+			for (Statement s : this.getResult()) {
 				try {
-					stardogConnection.add().statement(result.next());
-				} catch (QueryEvaluationException | StardogException e) {
+					stardogConnection.add().statement(s);
+				} catch (StardogException e) {
 					logger.error("Unable to save a statement.\n", e);
 				}
+				if(i%1000 == 0){
+					stardogConnection.commit();
+					stardogConnection.begin();
+					System.out.println(i+" triples saved to database.");
+				}
+				i++;
+				
 			}
 			stardogConnection.commit();
-		} catch (QueryEvaluationException e) {
-			logger.error("The query could not be evaluated.\n", e);
+			stardogConnection.begin();
 		} catch (StardogException e) {
 			logger.error("The commit of the new triples failed.\n", e);
 		}
 		
+	}
+
+
+	@Override
+	public QueryResult<Statement> queryWithLimit(String query, int limit, int offset) {
+		QueryResult<Statement> res = null;
+		try {
+			this.prepareQuery(query, limit, offset);
+			
+			if (this.query instanceof GraphQuery) {
+			    res = ((GraphQuery) this.query).evaluate();
+			}
+		} catch (QueryEvaluationException e) {
+			logger.error("The query could not be evaluated.\n", e);
+		}
+		return res;
 	}
 }

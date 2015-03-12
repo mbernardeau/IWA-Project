@@ -28,8 +28,8 @@ public class Prefixer {
 		Prefix p = new Prefix(prefix, url);
 		if(!prefixes.contains(p))
 			prefixes.add(p);
-		else
-			throw new IllegalArgumentException("The prefix you try to add already exists.");
+		else if(!prefixes.get(prefixes.indexOf(p)).url.equals(url))
+			throw new IllegalArgumentException("The prefix '"+prefix+"' you try to add already exists with a different URI.");
 	}
 	
 	/**

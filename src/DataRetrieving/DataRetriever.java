@@ -24,12 +24,12 @@ public class DataRetriever implements Job {
                         .connect();
 				
 				// Drop the database if exists
-				if (aAdminConnection.list().contains("testConnectionAPI")) {
-					aAdminConnection.drop("testConnectionAPI");
+				if (aAdminConnection.list().contains("Battles")) {
+					aAdminConnection.drop("Battles");
 				}
 				
 				// Create a permanant database
-				aAdminConnection.disk("testConnectionAPI").create();
+				aAdminConnection.disk("Battles").create();
 				
 				
 				// Close the admin connection
@@ -37,7 +37,7 @@ public class DataRetriever implements Job {
 				
 				// Open a user connection
 				Connection aConn = ConnectionConfiguration
-		                   .to("testConnectionAPI")
+		                   .to("Battles")
 		                   .credentials("admin", "admin")
 		                   .server("snarl://localhost:5820")
 		                   .connect();
