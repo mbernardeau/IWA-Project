@@ -80,9 +80,9 @@ public abstract class SparqlQueryer<T> {
 	}
 	
 	/**
-	 * Queries the service with the given query, and stores the result into the list.
+	 * Queries the service with the given query, and returns the result.
 	 * @param query The query
 	 * @return the number of results
 	 */
-	public abstract QueryResult<T> queryWithLimit(String query, int limit, int offset);
+	protected abstract QueryResult<T> queryWithLimit(String query, int limit, int offset);
 }

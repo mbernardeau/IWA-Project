@@ -15,7 +15,7 @@ public class SparqlSelectQueryer extends SparqlQueryer<BindingSet> {
 	}
 
 	@Override
-	public QueryResult<BindingSet> queryWithLimit(String query, int limit, int offset){
+	protected QueryResult<BindingSet> queryWithLimit(String query, int limit, int offset){
 		this.prepareQuery(query, limit, offset);
 		QueryResult<BindingSet> res = null;
 		if (this.query instanceof TupleQuery){

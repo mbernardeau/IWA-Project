@@ -55,7 +55,7 @@ public class SparqlConstructQueryer extends SparqlQueryer<Statement> {
 
 
 	@Override
-	public QueryResult<Statement> queryWithLimit(String query, int limit, int offset) {
+	protected QueryResult<Statement> queryWithLimit(String query, int limit, int offset) {
 		QueryResult<Statement> res = null;
 		try {
 			this.prepareQuery(query, limit, offset);
