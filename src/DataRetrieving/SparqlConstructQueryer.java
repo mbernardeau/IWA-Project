@@ -27,8 +27,10 @@ public class SparqlConstructQueryer extends SparqlQueryer<Statement> {
 	
 	/**
 	 * Saves the result into the stardog local database
+	 * @throws StardogException 
 	 */
-	void save(){
+	void save() throws StardogException{
+		stardogConnection.begin();
 		int i=0;
 		try {
 			for (Statement s : this.getResult()) {
@@ -37,16 +39,16 @@ public class SparqlConstructQueryer extends SparqlQueryer<Statement> {
 				} catch (StardogException e) {
 					logger.error("Unable to save a statement.\n", e);
 				}
-				if(i%1000 == 0){
+				if(i%1000 == 0 && i!=0){
 					stardogConnection.commit();
 					stardogConnection.begin();
-					System.out.println(i+" triples saved to database.");
+					System.out.println("\n"+i+" triples saved to database.");
 				}
 				i++;
 				
 			}
 			stardogConnection.commit();
-			stardogConnection.begin();
+			System.out.println("\nSaving Operation done : total of "+ i+" triples saved to database.");
 		} catch (StardogException e) {
 			logger.error("The commit of the new triples failed.\n", e);
 		}

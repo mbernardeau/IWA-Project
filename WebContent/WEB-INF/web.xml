@@ -10,8 +10,6 @@
     <welcome-file>default.jsp</welcome-file>
   </welcome-file-list>
   <listener>
-     <listener-class>DataRetrieving.Initializer</listener-class>
+    <listener-class>DataRetrieving.Initializer</listener-class>
   </listener>
-
-
 </web-app>
