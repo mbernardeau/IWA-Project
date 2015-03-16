@@ -15,7 +15,7 @@ import javax.servlet.http.HttpServletResponse;
 @WebServlet({ "/", "/index" })
 public class Index extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-	private static final String VIEW = "../WEB-INF/Index.jsp";
+	private static final String VIEW = "WEB-INF/Index.jsp";
        
     /**
      * @see HttpServlet#HttpServlet()
@@ -37,5 +37,4 @@ public class Index extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		request.getRequestDispatcher(VIEW).forward(request, response);
 	}
-
 }

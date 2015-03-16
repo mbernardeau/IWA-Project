@@ -41,7 +41,7 @@ public class CSVRetriever {
 		Map<String, Map<String, String>> shorts = new HashMap<String, Map<String, String>>();
 		String [] nextLine;
 		String [] headers = reader.readNext();
-		
+
 		TupleQueryResult res = stardogConnection.select(Prefixer.INSTANCE.toString() + "\nSELECT ?instance ?short ?type WHERE{ {?instance a btl:wx1 ; btl:short ?short ; a ?type . } UNION {?instance a btl:wx2 ; btl:short ?short ; a ?type . } UNION {?instance a btl:wx3 ; btl:short ?short ; a ?type . } UNION {?instance a btl:wx4 ; btl:short ?short ; a ?type . } FILTER(?type != owl:Thing)}").execute();
 		while(res.hasNext()){
 			BindingSet set = res.next();
@@ -51,24 +51,24 @@ public class CSVRetriever {
 			}
 			shorts.get(set.getBinding("type").getValue().toString()).put(set.getBinding("short").getValue().toString().replace("\"", ""), set.getBinding("instance").getValue().toString().replace("\"", ""));	
 		}
-		
+
 		while ((nextLine = reader.readNext()) != null) {
 			res = stardogConnection.select(Prefixer.INSTANCE + "\nSELECT ?battle WHERE{ ?battle btl:isqno "+nextLine[0]+" . }")
-													.execute();
+					.execute();
 			if(res.hasNext()){
 				URI battleEntity  = vf.createURI(res.next().getBinding("battle").getValue().stringValue());
-				
+
 				for(int i = 2; i < nextLine.length; i++){
 					Map<String, String> wx = shorts.get(BTL + headers[i]);
-					
+
 					if(nextLine[i] != null && nextLine[i].length()>0 && wx.get(nextLine[i]) != null)
-					stardogConnection.add().statement(battleEntity,
-							createEntity(BTL, headers[i]),
-							vf.createURI(wx.get(nextLine[i])));
+						stardogConnection.add().statement(battleEntity,
+								createEntity(BTL, headers[i]),
+								vf.createURI(wx.get(nextLine[i])));
 				}
 			}
 		}
-		
+
 		stardogConnection.commit();
 		reader.close();
 		//	CSVReader reader = new CSVReader(new FileReader("../../CDB13_data/weather.csv"));
@@ -87,14 +87,16 @@ public class CSVRetriever {
 
 		String [] nextLine;
 		reader.readNext();
-		
+
 		while ((nextLine = reader.readNext()) != null) {
-			addInstance(nextLine[1], name);
-			stardogConnection.add().statement(vf.createStatement(createEntity(BTL, nextLine[1]),
-					vf.createURI(BTL, "short"),
-					vf.createLiteral(nextLine[0])));
+			if(nextLine[1] != null  && nextLine[1].length()>0){
+				addInstance(nextLine[1], name);
+				stardogConnection.add().statement(vf.createStatement(createEntity(BTL, nextLine[1]),
+						vf.createURI(BTL, "short"),
+						vf.createLiteral(nextLine[0])));
+			}
 		}
-		
+
 		stardogConnection.commit();
 		reader.close();
 	}
@@ -124,27 +126,34 @@ public class CSVRetriever {
 
 		while ((nextLine = reader.readNext()) != null) {
 			URI battleEntity = createEntity(BTL, nextLine[2]);
+			boolean hasWar = nextLine[1] != null && nextLine[1].length() > 0;
 
-			if(!wars.contains(nextLine[1])){ // War is not already defined
+			if(hasWar && !wars.contains(nextLine[1])){ // War is not already defined
 				addInstance(nextLine[1], "War");
 				wars.add(nextLine[1]);
 			}
 
 			addInstance(nextLine[2], "Battle");
-			stardogConnection.add().statement(battleEntity, 
-					vf.createURI(BTL, "war"), 
-					createEntity(BTL, nextLine[1]));
+			
+			if(hasWar)
+				stardogConnection.add().statement(battleEntity, 
+						vf.createURI(BTL, "war"), 
+						createEntity(BTL, nextLine[1]));
 
 			stardogConnection.add().statement(battleEntity,
 					vf.createURI(BTL, headers[0]),
 					vf.createLiteral(Integer.valueOf(nextLine[0]))
 					);
 
-			if(nextLine[44] != null && nextLine[44].length() > 0)
+			if(nextLine[44] != null && nextLine[44].length() > 0){
 				stardogConnection.add().statement(battleEntity, 
 						vf.createURI(OWL, "sameAs"),
 						vf.createURI(nextLine[44]));
-
+				stardogConnection.add().statement(vf.createURI(nextLine[44]), 
+						vf.createURI(OWL, "sameAs"),
+						battleEntity);
+			}
+			
 			for(Integer column : toAdd){
 				stardogConnection.add().statement(battleEntity,
 						vf.createURI(BTL, headers[column]),
@@ -169,30 +178,31 @@ public class CSVRetriever {
 
 
 		while ((nextLine = reader.readNext()) != null) {
-			TupleQueryResult res = stardogConnection.select(Prefixer.INSTANCE + "\nSELECT ?battle WHERE{ ?battle btl:isqno "+nextLine[0]+" . }")
-					.execute();
-			if(res.hasNext()){
-				URI battleEntity  = vf.createURI(res.next().getBinding("battle").getValue().stringValue());
+			if(nextLine[3] != null && nextLine[3].length() > 0){
+				TupleQueryResult res = stardogConnection.select(Prefixer.INSTANCE + "\nSELECT ?battle WHERE{ ?battle btl:isqno "+nextLine[0]+" . }")
+						.execute();
+				if(res.hasNext()){
+					URI battleEntity  = vf.createURI(res.next().getBinding("battle").getValue().stringValue());
 
-				if(!commanders.contains(nextLine[3])){ // War is not already defined
-					addInstance(nextLine[3], "Commander");
-					commanders.add(nextLine[3]);
-				}
-				if(nextLine[4] != null &&  nextLine[4].length() > 5)
-					stardogConnection.add().statement(createEntity(BTL, nextLine[3]), 
-							vf.createURI(FOAF, "isPrimaryTopicOf"),
-							vf.createURI(nextLine[4].startsWith("http://") ? nextLine[4] : "http://en.wikipedia.org/wiki/"+nextLine[4])
+					if(!commanders.contains(nextLine[3])){ // Commander is not already defined
+						addInstance(nextLine[3], "Commander");
+						commanders.add(nextLine[3]);
+					}
+					if(nextLine[4] != null &&  nextLine[4].length() > 5)
+						stardogConnection.add().statement(createEntity(BTL, nextLine[3]), 
+								vf.createURI(FOAF, "isPrimaryTopicOf"),
+								vf.createURI(nextLine[4].startsWith("http://") ? nextLine[4] : "http://en.wikipedia.org/wiki/"+nextLine[4])
+								);
+
+					stardogConnection.add().statement(battleEntity,
+							vf.createURI(BTL, "commander"),
+							createEntity(BTL, nextLine[3])
 							);
-
-				stardogConnection.add().statement(battleEntity,
-						vf.createURI(BTL, "commander"),
-						createEntity(BTL, nextLine[3])
-						);
-				stardogConnection.add().statement(createEntity(BTL, nextLine[3]),
-						vf.createURI(BTL, "side"),
-						vf.createLiteral(nextLine[2])
-						);
-
+					stardogConnection.add().statement(createEntity(BTL, nextLine[3]),
+							vf.createURI(BTL, "side"),
+							vf.createLiteral(nextLine[2])
+							);
+				}
 			}
 
 		}
@@ -222,7 +232,7 @@ public class CSVRetriever {
 				vf.createURI(BTL, clazz)));
 		stardogConnection.add().statement(vf.createStatement(createEntity(BTL, name),
 				vf.createURI(RDFS, "label"),
-				vf.createLiteral(name, "en")));
+				vf.createLiteral(toUpper(name, ' '), "en")));
 		stardogConnection.add().statement(	vf.createStatement(createEntity(BTL, name),
 				vf.createURI(RDF, "type"),
 				vf.createURI(OWL, "Thing")));
@@ -230,7 +240,6 @@ public class CSVRetriever {
 
 
 	private URI createEntity(String context, String name){
-
 		return vf.createURI(context, toUpper(name, '_'));
 	}
 

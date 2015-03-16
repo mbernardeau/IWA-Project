@@ -20,6 +20,7 @@ import org.openrdf.query.QueryEvaluationException;
 import DataRetrieving.Prefixer;
 
 import com.complexible.stardog.StardogException;
+import com.complexible.stardog.api.Connection;
 import com.complexible.stardog.api.ConnectionConfiguration;
 import com.complexible.stardog.reasoning.api.ReasoningType;
 
@@ -52,18 +53,42 @@ public class Battle extends HttpServlet {
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		int limit;
+		int isqno = -1;
+		
+		if(request.getParameter("limit") != null){
+			try{
+				limit = Integer.valueOf(request.getParameter("limit"));
+			}catch(NumberFormatException e){
+				limit = 1000;
+			}
+		}else{
+			limit = 1000;
+		}
+		if(request.getParameter("isqno") != null){
+			try{
+				isqno = Integer.valueOf(request.getParameter("limit"));
+			}catch(NumberFormatException e){
+				isqno = -1;
+				// Wrong format, doing normal request
+			}
+		}
 		
 		try {
-			ReasoningConnection aConn = ConnectionConfiguration
+			Connection aConn = ConnectionConfiguration
 			        .to(DB_NAME)
 			        .credentials("admin", "admin")
 			        .server(LOCAL_DB_SERVER)
 			        .reasoning(ReasoningType.SL)
 			        .connect();
+			String sparqlReq;
+			if(isqno == -1)
+				sparqlReq = Prefixer.INSTANCE.toString() + "\nCONSTRUCT{ ?entity ?rel ?obj . } WHERE { {?entity a btl:Battle ; ?rel ?obj .} UNION {?entity a btl:Battle ; owl:sameAs ?b. ?b ?rel ?obj . } } LIMIT "+limit;
+			else
+				sparqlReq = Prefixer.INSTANCE.toString() + "\nCONSTRUCT{ ?entity ?rel ?obj . } WHERE { {?entity a btl:Battle ; btl:isqno \""+isqno+"\"^^<http://www.w3.org/2001/XMLSchema#integer> ; ?rel ?obj .} UNION {?entity a btl:Battle ; btl:isqno \""+isqno+"\"^^<http://www.w3.org/2001/XMLSchema#integer> ; owl:sameAs ?b. ?b ?rel ?obj . } } LIMIT "+limit;
 			
-			
-			GraphQueryResult res = aConn.graph(Prefixer.INSTANCE.toString() + "\nCONSTRUCT{ ?entity ?rel ?obj . } WHERE { ?entity a btl:Battle ; ?rel ?obj . }").execute();
-			
+			GraphQueryResult res = aConn.graph(sparqlReq).execute();
+		
 			//List<Statement> result = new ArrayList<Statement>();
 			//ByteArrayOutputStream b = new ByteArrayOutputStream();
 			//JSONLDWriter p = new JSONLDWriter(b);

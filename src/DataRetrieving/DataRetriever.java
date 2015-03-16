@@ -9,6 +9,7 @@ import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
+import com.complexible.common.util.Namespaces;
 import com.complexible.stardog.api.Connection;
 import com.complexible.stardog.api.ConnectionConfiguration;
 import com.complexible.stardog.api.admin.AdminConnection;
@@ -53,7 +54,8 @@ public class DataRetriever implements Job {
 		                   .server(LOCAL_DB_SERVER)
 		                   .connect();
 				//aConn.begin();
-				
+				final com.complexible.common.rdf.model.Namespaces ns = aConn.namespaces(); 
+				ns.add("btl", "http://battles.com/");
 				
 				/// Example to add data from a Turtle File
 				//	aConn.add().io()
