@@ -1,6 +1,7 @@
 package ClientRequest;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -22,6 +23,8 @@ import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.RepositoryException;
 import org.openrdf.repository.http.HTTPRepository;
+
+import com.complexible.common.base.DateTime;
 
 import DataRetrieving.Prefixer;
 
@@ -48,6 +51,7 @@ public class Battle extends HttpServlet {
 		Prefixer.INSTANCE.addPrefix("owl", "http://www.w3.org/2002/07/owl#");
 		Prefixer.INSTANCE.addPrefix("foaf", "http://xmlns.com/foaf/0.1/");
 		Prefixer.INSTANCE.addPrefix("dbpedia-owl", "http://dbpedia.org/ontology/");
+		Prefixer.INSTANCE.addPrefix("xsd", "http://www.w3.org/2001/XMLSchema#");
     }
 
 	/**
@@ -106,6 +110,9 @@ public class Battle extends HttpServlet {
 		
 		int isqno = -1;
 		int year = 0;
+		boolean hasDate = false;
+		LocalDate minDate = null;
+		LocalDate maxDate = LocalDate.now();
 		int limit;
 		
 		if(request.getParameter("limit") != null){
@@ -116,6 +123,36 @@ public class Battle extends HttpServlet {
 			}
 		}else{
 			limit = 1000;
+		}
+		if(request.getParameter("year") != null){
+			try{
+				year = Integer.valueOf(request.getParameter("year"));
+				hasDate=true;
+				minDate= LocalDate.of(year, 1, 1);
+				maxDate= LocalDate.of(year, 12, 31);
+			}catch(NumberFormatException e){
+				
+			}
+		}
+		if(request.getParameter("minyear") != null){
+			try{
+				int minyear = Integer.valueOf(request.getParameter("minyear"));
+				hasDate=true;
+				minDate= LocalDate.of(minyear, 1, 1);
+				
+			}catch(NumberFormatException e){
+				
+			}
+		}
+		if(request.getParameter("minyear") != null){
+			try{
+				int maxyear = Integer.valueOf(request.getParameter("maxyear"));
+				hasDate=true;
+				maxDate= LocalDate.of(maxyear, 12, 31);
+				
+			}catch(NumberFormatException e){
+				
+			}
 		}
 		
 		if(request.getParameter("isqno") != null){
@@ -136,15 +173,19 @@ public class Battle extends HttpServlet {
 		}
 		String result = Prefixer.INSTANCE.toString() + "\n"+
 						"CONSTRUCT{ ?entity ?rel ?obj . } "+
-						"WHERE { {" ;
+						"WHERE {" ;
 		
 		String subRequest = "?entity a btl:Battle ; \n";
 		
 		if(isqno != -1)
-			subRequest += "\nbtl:isqno \""+isqno+"\"^^<http://www.w3.org/2001/XMLSchema#integer> ;\n";
+			subRequest += "\nbtl:isqno \""+isqno+"\"^^xsd:int ;\n";
 		
 		result += 		subRequest + 
-							"?rel ?obj . }"+	
+							"?rel ?obj "+
+							(hasDate ? ";\n dbpedia-owl:date ?date" : "")+
+							"."+
+							(hasDate ? "\nFILTER(?date >= \""+minDate+"\"^^xsd:date)\nFILTER(?date <= \""+maxDate+"\"^^xsd:date)\n" : "")
+							+"}"+
 						"LIMIT "+limit;
 		
 		return result;
