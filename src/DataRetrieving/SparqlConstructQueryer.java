@@ -6,20 +6,21 @@ import org.openrdf.model.Statement;
 import org.openrdf.query.GraphQuery;
 import org.openrdf.query.QueryEvaluationException;
 import org.openrdf.query.QueryResult;
+import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.repository.RepositoryException;
 
 import com.complexible.stardog.StardogException;
-import com.complexible.stardog.api.Connection;
 
 public class SparqlConstructQueryer extends SparqlQueryer<Statement> {
 	private static final Logger logger = LogManager.getLogger(SparqlConstructQueryer.class);
-	Connection stardogConnection;
+	RepositoryConnection stardogConnection;
 	
 	/**
 	 * Constructor of the SparqlQueryer class
 	 * @param service The sparql endpoint to query
 	 * @param stardogConnection The connection to the stardog local repository
 	 */
-	public SparqlConstructQueryer(String service, Connection stardogConnection) {
+	public SparqlConstructQueryer(String service, RepositoryConnection stardogConnection) {
 		super(service);
 		this.stardogConnection = stardogConnection;
 	}
@@ -28,30 +29,23 @@ public class SparqlConstructQueryer extends SparqlQueryer<Statement> {
 	/**
 	 * Saves the result into the stardog local database
 	 * @throws StardogException 
+	 * @throws RepositoryException 
 	 */
-	void save() throws StardogException{
+	void save() throws RepositoryException{
 		stardogConnection.begin();
 		int i=0;
-		try {
-			for (Statement s : this.getResult()) {
-				try {
-					stardogConnection.add().statement(s);
-				} catch (StardogException e) {
-					logger.error("Unable to save a statement.\n", e);
-				}
-				if(i%1000 == 0 && i!=0){
-					stardogConnection.commit();
-					stardogConnection.begin();
-					System.out.println("\n"+i+" triples saved to database.");
-				}
-				i++;
-				
+		for (Statement s : this.getResult()) {
+			stardogConnection.add(s);
+			if(i%1000 == 0 && i!=0){
+				stardogConnection.commit();
+				stardogConnection.begin();
+				System.out.println("\n"+i+" triples saved to database.");
 			}
-			stardogConnection.commit();
-			System.out.println("\nSaving Operation done : total of "+ i+" triples saved to database.");
-		} catch (StardogException e) {
-			logger.error("The commit of the new triples failed.\n", e);
+			i++;
+			
 		}
+		stardogConnection.commit();
+		System.out.println("\nSaving Operation done : total of "+ i+" triples saved to database.");
 		
 	}
 

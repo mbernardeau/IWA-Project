@@ -4,24 +4,22 @@ import java.io.File;
 
 import org.openrdf.model.Value;
 import org.openrdf.query.BindingSet;
+import org.openrdf.query.QueryLanguage;
 import org.openrdf.query.TupleQueryResult;
+import org.openrdf.repository.Repository;
+import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.repository.http.HTTPRepository;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
-
-import com.complexible.common.util.Namespaces;
-import com.complexible.stardog.api.Connection;
-import com.complexible.stardog.api.ConnectionConfiguration;
-import com.complexible.stardog.api.admin.AdminConnection;
-import com.complexible.stardog.api.admin.AdminConnectionConfiguration;
 
 /**
  * Mostly based on Stardog example
  * https://gist.github.com/mhgrove/1045573
  */
 public class DataRetriever implements Job {
-	private static final String LOCAL_DB_SERVER = "snarl://localhost:5820";
-	private static final String DB_NAME = "Battles3";
+	private static final String LOCAL_DB_SERVER = "http://localhost:8181/openrdf-sesame";
+	private static final String DB_NAME = "Battles";
 	
 	//private Collection<Namespace> namespaces =  new LinkedList<Namespace>();
 	@Override
@@ -30,6 +28,7 @@ public class DataRetriever implements Job {
     	System.out.println(DataRetriever.class.getClassLoader().getResource("").getPath());
     	
 			try {
+				/*
 				// Connect as an admin to the server
 				AdminConnection aAdminConnection = AdminConnectionConfiguration.toServer(LOCAL_DB_SERVER)
                         .credentials("admin", "admin")
@@ -46,16 +45,22 @@ public class DataRetriever implements Job {
 				
 				// Close the admin connection
 				aAdminConnection.close();
-				
+				*/
 				// Open a user connection
-				Connection aConn = ConnectionConfiguration
+				/*Connection aConn = ConnectionConfiguration
 		                   .to(DB_NAME)
 		                   .credentials("admin", "admin")
 		                   .server(LOCAL_DB_SERVER)
 		                   .connect();
+				*/
+				Repository sesameServer = new HTTPRepository(LOCAL_DB_SERVER,DB_NAME);  
+				sesameServer.initialize(); 
+				
+				RepositoryConnection rConn = sesameServer.getConnection();
+				
 				//aConn.begin();
-				final com.complexible.common.rdf.model.Namespaces ns = aConn.namespaces(); 
-				ns.add("btl", "http://battles.com/");
+				//final com.complexible.common.rdf.model.Namespaces ns = aConn.namespaces(); 
+				//ns.add("btl", "http://battles.com/");
 				
 				/// Example to add data from a Turtle File
 				//	aConn.add().io()
@@ -111,7 +116,7 @@ public class DataRetriever implements Job {
 				//final String classPath = System.getProperty("java.class.path", ".");
 				
 				File[] files = new File(DataRetriever.class.getClassLoader().getResource("").getFile().replace("%20", " ")+"DataRetrieving/").listFiles();
-				CSVRetriever csv = new CSVRetriever(aConn);
+				CSVRetriever csv = new CSVRetriever(rConn);
 				
 				for(File f : files){
 					if(f.getName().startsWith("enum_")){
@@ -123,9 +128,9 @@ public class DataRetriever implements Job {
 				csv.importCommanders(DataRetriever.class.getClassLoader().getResource("./DataRetrieving/commanders.csv"));
 				csv.importWeather(DataRetriever.class.getClassLoader().getResource("./DataRetrieving/weather.csv"));
 				
-				aConn.begin();
-				TupleQueryResult res = aConn.select(Prefixer.INSTANCE.toString() + "\nSELECT ?dbentity WHERE{ ?battle a btl:Battle ; owl:sameAs ?dbentity . }").execute();
-				aConn.commit();
+				rConn.begin();
+				TupleQueryResult res = rConn.prepareTupleQuery(QueryLanguage.SPARQL,Prefixer.INSTANCE.toString() + "\nSELECT ?dbentity WHERE{ ?battle a btl:Battle ; owl:sameAs ?dbentity . }").evaluate();
+				rConn.commit();
 				
 				
 				while(res.hasNext()){
@@ -134,7 +139,7 @@ public class DataRetriever implements Job {
 					
 					if(b != null){
 						Value dbentity = b.getBinding("dbentity").getValue();
-						SparqlConstructQueryer DBPediaQueryer = new SparqlConstructQueryer("http://dbpedia.org/sparql", aConn);
+						SparqlConstructQueryer DBPediaQueryer = new SparqlConstructQueryer("http://dbpedia.org/sparql", rConn);
 					
 						DBPediaQueryer.query("\nCONSTRUCT{ <"+dbentity+"> ?pred ?obj . }WHERE{ <"+dbentity+"> ?pred ?obj . FILTER(!isLiteral(?obj) || lang(?obj) = \"\" || langMatches(lang(?obj), \"EN\"))}");
 					
@@ -144,7 +149,7 @@ public class DataRetriever implements Job {
 					}
 				}
 				
-				aConn.close();
+				rConn.close();
 				
 				
 			} catch (Exception e) {

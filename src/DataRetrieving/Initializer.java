@@ -33,14 +33,14 @@ public class Initializer implements ServletContextListener{
 				.build(); 
 
 		// Trigger the job to run now, and then every 40 seconds 
-		/*Trigger trigger = newTrigger() 
+		Trigger trigger = newTrigger() 
 				.withIdentity("myTrigger", "group1") 
 				.startNow()
 				.withSchedule(simpleSchedule()
 						.withIntervalInHours(1)
 						.repeatForever())
 						.build();
-						
+					
 		//.withSchedule(simpleSchedule() 
 		//		.withIntervalInSeconds(40) 
 		//	.repeatForever()) 
@@ -51,7 +51,7 @@ public class Initializer implements ServletContextListener{
 		} catch (SchedulerException e) {
 			e.printStackTrace();
 		}
-	*/
+	
 	}
 
 	@Override

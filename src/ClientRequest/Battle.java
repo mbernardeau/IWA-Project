@@ -10,19 +10,20 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.openrdf.model.Statement;
+import org.openrdf.query.GraphQuery;
 import org.openrdf.query.GraphQueryResult;
+import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.QueryLanguage;
+import org.openrdf.repository.Repository;
+import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.repository.RepositoryException;
+import org.openrdf.repository.http.HTTPRepository;
 
 import DataRetrieving.Prefixer;
-
-import com.complexible.stardog.StardogException;
-import com.complexible.stardog.api.Connection;
-import com.complexible.stardog.api.ConnectionConfiguration;
-import com.complexible.stardog.reasoning.api.ReasoningType;
 
 /**
  * Servlet implementation class Battle
@@ -30,8 +31,8 @@ import com.complexible.stardog.reasoning.api.ReasoningType;
 @WebServlet("/Battle")
 public class Battle extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-	private static final String LOCAL_DB_SERVER = "snarl://localhost:5820";
-	private static final String DB_NAME = "Battles3";
+	private static final String LOCAL_DB_SERVER = "http://localhost:8181/openrdf-sesame";
+	private static final String DB_NAME = "Battles";
 	
     /**
      * @see HttpServlet#HttpServlet()
@@ -46,54 +47,37 @@ public class Battle extends HttpServlet {
 		Prefixer.INSTANCE.addPrefix("btl", "http://battles.com/");
 		Prefixer.INSTANCE.addPrefix("owl", "http://www.w3.org/2002/07/owl#");
 		Prefixer.INSTANCE.addPrefix("foaf", "http://xmlns.com/foaf/0.1/");
-		
+		Prefixer.INSTANCE.addPrefix("dbpedia-owl", "http://dbpedia.org/ontology/");
     }
 
 	/**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		int limit;
-		int isqno = -1;
 		
-		if(request.getParameter("limit") != null){
-			try{
-				limit = Integer.valueOf(request.getParameter("limit"));
-			}catch(NumberFormatException e){
-				limit = 1000;
-			}
-		}else{
-			limit = 1000;
-		}
-		if(request.getParameter("isqno") != null){
-			try{
-				isqno = Integer.valueOf(request.getParameter("limit"));
-			}catch(NumberFormatException e){
-				isqno = -1;
-				// Wrong format, doing normal request
-			}
-		}
+		
 		
 		try {
-			Connection aConn = ConnectionConfiguration
+			/*Connection aConn = ConnectionConfiguration
 			        .to(DB_NAME)
 			        .credentials("admin", "admin")
 			        .server(LOCAL_DB_SERVER)
 			        .reasoning(ReasoningType.SL)
 			        .connect();
-			String sparqlReq;
-			if(isqno == -1)
-				sparqlReq = Prefixer.INSTANCE.toString() + "\nCONSTRUCT{ ?entity ?rel ?obj . } WHERE { {?entity a btl:Battle ; ?rel ?obj .} UNION {?entity a btl:Battle ; owl:sameAs ?b. ?b ?rel ?obj . } } LIMIT "+limit;
-			else
-				sparqlReq = Prefixer.INSTANCE.toString() + "\nCONSTRUCT{ ?entity ?rel ?obj . } WHERE { {?entity a btl:Battle ; btl:isqno \""+isqno+"\"^^<http://www.w3.org/2001/XMLSchema#integer> ; ?rel ?obj .} UNION {?entity a btl:Battle ; btl:isqno \""+isqno+"\"^^<http://www.w3.org/2001/XMLSchema#integer> ; owl:sameAs ?b. ?b ?rel ?obj . } } LIMIT "+limit;
+			*/
+			Repository sesameServer = new HTTPRepository(LOCAL_DB_SERVER,DB_NAME);  
+			sesameServer.initialize(); 
 			
-			GraphQueryResult res = aConn.graph(sparqlReq).execute();
-		
+			RepositoryConnection rConn = sesameServer.getConnection();
+			
+			GraphQuery query = rConn.prepareGraphQuery(QueryLanguage.SPARQL, createRequest(request));
+			query.setIncludeInferred(true);
+			GraphQueryResult res = query.evaluate();
+			
 			//List<Statement> result = new ArrayList<Statement>();
 			//ByteArrayOutputStream b = new ByteArrayOutputStream();
 			//JSONLDWriter p = new JSONLDWriter(b);
 			Map<String, JSONObject> map = new LinkedHashMap<String, JSONObject>();
-			JSONArray array = new JSONArray();
 			while(res.hasNext()){
 				Statement s = res.next();
 				if(!map.containsKey(s.getSubject().toString())){
@@ -104,16 +88,66 @@ public class Battle extends HttpServlet {
 			
 			response.getWriter().append(JSONValue.toJSONString(map));
 			
-		} catch (StardogException e) {
+		} catch (QueryEvaluationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (QueryEvaluationException e) {
+		} catch (RepositoryException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (MalformedQueryException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
 		
 	}
-
+	
+	private String createRequest(HttpServletRequest request){
+		
+		int isqno = -1;
+		int year = 0;
+		int limit;
+		
+		if(request.getParameter("limit") != null){
+			try{
+				limit = Integer.valueOf(request.getParameter("limit"));
+			}catch(NumberFormatException e){
+				limit = 1000;
+			}
+		}else{
+			limit = 1000;
+		}
+		
+		if(request.getParameter("isqno") != null){
+			try{
+				isqno = Integer.valueOf(request.getParameter("isqno"));
+			}catch(NumberFormatException e){
+				isqno = -1;
+				// Wrong format, doing normal request
+			}
+		}
+		if(request.getParameter("year") != null){
+			try{
+				year = Integer.valueOf(request.getParameter("year"));
+			}catch(NumberFormatException e){
+				year = -1;
+				// Wrong format, doing normal request
+			}
+		}
+		String result = Prefixer.INSTANCE.toString() + "\n"+
+						"CONSTRUCT{ ?entity ?rel ?obj . } "+
+						"WHERE { {" ;
+		
+		String subRequest = "?entity a btl:Battle ; \n";
+		
+		if(isqno != -1)
+			subRequest += "\nbtl:isqno \""+isqno+"\"^^<http://www.w3.org/2001/XMLSchema#integer> ;\n";
+		
+		result += 		subRequest + 
+							"?rel ?obj . }"+	
+						"LIMIT "+limit;
+		
+		return result;
+	}
 
 }

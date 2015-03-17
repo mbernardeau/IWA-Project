@@ -12,15 +12,18 @@ import java.util.Map;
 import org.openrdf.model.URI;
 import org.openrdf.model.impl.ValueFactoryImpl;
 import org.openrdf.query.BindingSet;
+import org.openrdf.query.MalformedQueryException;
 import org.openrdf.query.QueryEvaluationException;
+import org.openrdf.query.QueryLanguage;
 import org.openrdf.query.TupleQueryResult;
+import org.openrdf.repository.RepositoryConnection;
+import org.openrdf.repository.RepositoryException;
 
 import com.complexible.stardog.StardogException;
-import com.complexible.stardog.api.Connection;
 import com.opencsv.CSVReader;
 
 public class CSVRetriever {
-	Connection stardogConnection;
+	RepositoryConnection stardogConnection;
 	private static ValueFactoryImpl vf= ValueFactoryImpl.getInstance();
 
 	private static final String RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
@@ -30,19 +33,19 @@ public class CSVRetriever {
 	private static final String BTL = "http://battles.com/";
 	private static final String FOAF = "http://xmlns.com/foaf/0.1/";
 
-	public CSVRetriever(Connection stardogConnection){
+	public CSVRetriever(RepositoryConnection stardogConnection){
 		this.stardogConnection = stardogConnection;
 	}
 
 
-	public void importWeather(URL file) throws StardogException, IOException, QueryEvaluationException{
+	public void importWeather(URL file) throws StardogException, IOException, QueryEvaluationException, RepositoryException, MalformedQueryException{
 		stardogConnection.begin();
 		CSVReader reader = new CSVReader(new FileReader(file.getPath().replace("%20", " ")), ',');
 		Map<String, Map<String, String>> shorts = new HashMap<String, Map<String, String>>();
 		String [] nextLine;
 		String [] headers = reader.readNext();
 
-		TupleQueryResult res = stardogConnection.select(Prefixer.INSTANCE.toString() + "\nSELECT ?instance ?short ?type WHERE{ {?instance a btl:wx1 ; btl:short ?short ; a ?type . } UNION {?instance a btl:wx2 ; btl:short ?short ; a ?type . } UNION {?instance a btl:wx3 ; btl:short ?short ; a ?type . } UNION {?instance a btl:wx4 ; btl:short ?short ; a ?type . } FILTER(?type != owl:Thing)}").execute();
+		TupleQueryResult res = stardogConnection.prepareTupleQuery(QueryLanguage.SPARQL, Prefixer.INSTANCE.toString() + "\nSELECT ?instance ?short ?type WHERE{ {?instance a btl:wx1 ; btl:short ?short ; a ?type . } UNION {?instance a btl:wx2 ; btl:short ?short ; a ?type . } UNION {?instance a btl:wx3 ; btl:short ?short ; a ?type . } UNION {?instance a btl:wx4 ; btl:short ?short ; a ?type . } FILTER(?type != owl:Thing)}").evaluate();
 		while(res.hasNext()){
 			BindingSet set = res.next();
 			if(shorts.get(set.getBinding("type").getValue().toString()) == null){
@@ -53,8 +56,8 @@ public class CSVRetriever {
 		}
 
 		while ((nextLine = reader.readNext()) != null) {
-			res = stardogConnection.select(Prefixer.INSTANCE + "\nSELECT ?battle WHERE{ ?battle btl:isqno "+nextLine[0]+" . }")
-					.execute();
+			res = stardogConnection.prepareTupleQuery(QueryLanguage.SPARQL, Prefixer.INSTANCE + "\nSELECT ?battle WHERE{ ?battle btl:isqno "+nextLine[0]+" . }")
+					.evaluate();
 			if(res.hasNext()){
 				URI battleEntity  = vf.createURI(res.next().getBinding("battle").getValue().stringValue());
 
@@ -62,9 +65,9 @@ public class CSVRetriever {
 					Map<String, String> wx = shorts.get(BTL + headers[i]);
 
 					if(nextLine[i] != null && nextLine[i].length()>0 && wx.get(nextLine[i]) != null)
-						stardogConnection.add().statement(battleEntity,
+						stardogConnection.add(vf.createStatement(battleEntity,
 								createEntity(BTL, headers[i]),
-								vf.createURI(wx.get(nextLine[i])));
+								vf.createURI(wx.get(nextLine[i]))));
 				}
 			}
 		}
@@ -75,7 +78,7 @@ public class CSVRetriever {
 	}
 
 
-	public void importEnum(String file, String name) throws IOException, StardogException{
+	public void importEnum(String file, String name) throws IOException, StardogException, RepositoryException{
 
 		stardogConnection.begin();
 		CSVReader reader = new CSVReader(new FileReader(file), ',');
@@ -91,7 +94,7 @@ public class CSVRetriever {
 		while ((nextLine = reader.readNext()) != null) {
 			if(nextLine[1] != null  && nextLine[1].length()>0){
 				addInstance(nextLine[1], name);
-				stardogConnection.add().statement(vf.createStatement(createEntity(BTL, nextLine[1]),
+				stardogConnection.add(vf.createStatement(createEntity(BTL, nextLine[1]),
 						vf.createURI(BTL, "short"),
 						vf.createLiteral(nextLine[0])));
 			}
@@ -103,7 +106,7 @@ public class CSVRetriever {
 
 
 
-	public void importBattles(URL file) throws StardogException, IOException{
+	public void importBattles(URL file) throws StardogException, IOException, NumberFormatException, RepositoryException{
 		stardogConnection.begin();
 		CSVReader reader = new CSVReader(new FileReader(file.getPath().replace("%20", " ")), ',');
 		List<Integer> toAdd = new ArrayList<Integer>();
@@ -136,29 +139,29 @@ public class CSVRetriever {
 			addInstance(nextLine[2], "Battle");
 			
 			if(hasWar)
-				stardogConnection.add().statement(battleEntity, 
+				stardogConnection.add(vf.createStatement(battleEntity, 
 						vf.createURI(BTL, "war"), 
-						createEntity(BTL, nextLine[1]));
+						createEntity(BTL, nextLine[1])));
 
-			stardogConnection.add().statement(battleEntity,
+			stardogConnection.add(vf.createStatement(battleEntity,
 					vf.createURI(BTL, headers[0]),
 					vf.createLiteral(Integer.valueOf(nextLine[0]))
-					);
+					));
 
 			if(nextLine[44] != null && nextLine[44].length() > 0){
-				stardogConnection.add().statement(battleEntity, 
+				stardogConnection.add(vf.createStatement(battleEntity, 
 						vf.createURI(OWL, "sameAs"),
-						vf.createURI(nextLine[44]));
-				stardogConnection.add().statement(vf.createURI(nextLine[44]), 
+						vf.createURI(nextLine[44])));
+				stardogConnection.add(vf.createStatement(vf.createURI(nextLine[44]), 
 						vf.createURI(OWL, "sameAs"),
-						battleEntity);
+						battleEntity));
 			}
 			
 			for(Integer column : toAdd){
-				stardogConnection.add().statement(battleEntity,
+				stardogConnection.add(vf.createStatement(battleEntity,
 						vf.createURI(BTL, headers[column]),
 						vf.createLiteral(nextLine[column])
-						);
+						));
 			}
 		}
 
@@ -166,7 +169,7 @@ public class CSVRetriever {
 		reader.close();
 	}
 
-	public void importCommanders(URL file) throws StardogException, IOException, QueryEvaluationException{
+	public void importCommanders(URL file) throws StardogException, IOException, QueryEvaluationException, RepositoryException, MalformedQueryException{
 		stardogConnection.begin();
 		CSVReader reader = new CSVReader(new FileReader(file.getPath().replace("%20", " ")), ',');
 		String [] headers = reader.readNext();
@@ -179,8 +182,8 @@ public class CSVRetriever {
 
 		while ((nextLine = reader.readNext()) != null) {
 			if(nextLine[3] != null && nextLine[3].length() > 0){
-				TupleQueryResult res = stardogConnection.select(Prefixer.INSTANCE + "\nSELECT ?battle WHERE{ ?battle btl:isqno "+nextLine[0]+" . }")
-						.execute();
+				TupleQueryResult res = stardogConnection.prepareTupleQuery(QueryLanguage.SPARQL, Prefixer.INSTANCE + "\nSELECT ?battle WHERE{ ?battle btl:isqno "+nextLine[0]+" . }")
+						.evaluate();
 				if(res.hasNext()){
 					URI battleEntity  = vf.createURI(res.next().getBinding("battle").getValue().stringValue());
 
@@ -189,19 +192,19 @@ public class CSVRetriever {
 						commanders.add(nextLine[3]);
 					}
 					if(nextLine[4] != null &&  nextLine[4].length() > 5)
-						stardogConnection.add().statement(createEntity(BTL, nextLine[3]), 
+						stardogConnection.add(vf.createStatement(createEntity(BTL, nextLine[3]), 
 								vf.createURI(FOAF, "isPrimaryTopicOf"),
 								vf.createURI(nextLine[4].startsWith("http://") ? nextLine[4] : "http://en.wikipedia.org/wiki/"+nextLine[4])
-								);
+								));
 
-					stardogConnection.add().statement(battleEntity,
+					stardogConnection.add(vf.createStatement(battleEntity,
 							vf.createURI(BTL, "commander"),
 							createEntity(BTL, nextLine[3])
-							);
-					stardogConnection.add().statement(createEntity(BTL, nextLine[3]),
+							));
+					stardogConnection.add(vf.createStatement(createEntity(BTL, nextLine[3]),
 							vf.createURI(BTL, "side"),
 							vf.createLiteral(nextLine[2])
-							);
+							));
 				}
 			}
 
@@ -226,14 +229,14 @@ public class CSVRetriever {
 		return res.deleteCharAt(res.length()-1).toString();
 	}
 
-	private void addInstance(String name, String clazz) throws StardogException{
-		stardogConnection.add().statement(vf.createStatement(createEntity(BTL, name),
+	private void addInstance(String name, String clazz) throws StardogException, RepositoryException{
+		stardogConnection.add(vf.createStatement(createEntity(BTL, name),
 				vf.createURI(RDF, "type"),
 				vf.createURI(BTL, clazz)));
-		stardogConnection.add().statement(vf.createStatement(createEntity(BTL, name),
+		stardogConnection.add(vf.createStatement(createEntity(BTL, name),
 				vf.createURI(RDFS, "label"),
 				vf.createLiteral(toUpper(name, ' '), "en")));
-		stardogConnection.add().statement(	vf.createStatement(createEntity(BTL, name),
+		stardogConnection.add(vf.createStatement(createEntity(BTL, name),
 				vf.createURI(RDF, "type"),
 				vf.createURI(OWL, "Thing")));
 	}
@@ -243,34 +246,34 @@ public class CSVRetriever {
 		return vf.createURI(context, toUpper(name, '_'));
 	}
 
-	private void initDatatypeProperty(String name) throws StardogException{
-		stardogConnection.add().statement(vf.createStatement(
+	private void initDatatypeProperty(String name) throws StardogException, RepositoryException{
+		stardogConnection.add(vf.createStatement(
 				vf.createURI(BTL, name), 
 				vf.createURI(RDF, "type"), 
 				vf.createURI(OWL, "DatatypeProperty")));
-		stardogConnection.add().statement(vf.createStatement(
+		stardogConnection.add(vf.createStatement(
 				vf.createURI(BTL, name), 
 				vf.createURI(RDFS, "subPropertyOf"), 
 				vf.createURI(RDF, "Property")));
 	}
 
-	private void initObjectProperty(String name) throws StardogException{
-		stardogConnection.add().statement(vf.createStatement(
+	private void initObjectProperty(String name) throws StardogException, RepositoryException{
+		stardogConnection.add(vf.createStatement(
 				vf.createURI(BTL, name), 
 				vf.createURI(RDF, "type"), 
 				vf.createURI(OWL, "ObjectProperty")));
-		stardogConnection.add().statement(vf.createStatement(
+		stardogConnection.add(vf.createStatement(
 				vf.createURI(BTL, name), 
 				vf.createURI(RDFS, "subPropertyOf"), 
 				vf.createURI(RDF, "Property")));
 
 	}
-	private void initClass(String name) throws StardogException{
-		stardogConnection.add().statement(vf.createStatement(
+	private void initClass(String name) throws StardogException, RepositoryException{
+		stardogConnection.add(vf.createStatement(
 				vf.createURI(BTL, name), 
 				vf.createURI(RDF, "type"), 
 				vf.createURI(OWL, "Class")));
-		stardogConnection.add().statement(vf.createStatement(
+		stardogConnection.add(vf.createStatement(
 				vf.createURI(BTL, name),
 				vf.createURI(RDFS, "subClassOf"), 
 				vf.createURI(OWL, "Thing")));
