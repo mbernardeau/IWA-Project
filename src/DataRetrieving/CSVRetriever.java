@@ -49,7 +49,7 @@ public class CSVRetriever {
 		while(res.hasNext()){
 			BindingSet set = res.next();
 			if(shorts.get(set.getBinding("type").getValue().toString()) == null){
-				initObjectProperty(set.getBinding("type").getValue().toString().replace("http://battles.com/", ""));
+				initObjectProperty(set.getBinding("type").getValue().toString().replace("http://battles.com/", "").toLowerCase());
 				shorts.put(set.getBinding("type").getValue().toString(), new HashMap<String, String>());
 			}
 			shorts.get(set.getBinding("type").getValue().toString()).put(set.getBinding("short").getValue().toString().replace("\"", ""), set.getBinding("instance").getValue().toString().replace("\"", ""));	
