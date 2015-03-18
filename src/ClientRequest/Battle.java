@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.openrdf.model.Statement;
@@ -43,15 +44,6 @@ public class Battle extends HttpServlet {
     public Battle() {
         super();
         // TODO Auto-generated constructor stub
-        Prefixer.INSTANCE.addPrefix("dbpedia", "http://dbpedia.org/resource/");
-		Prefixer.INSTANCE.addPrefix("geo", "http://www.w3.org/2003/01/geo/wgs84_pos#");
-		Prefixer.INSTANCE.addPrefix("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-		Prefixer.INSTANCE.addPrefix("dbo", "http://dbpedia.org/ontology/");
-		Prefixer.INSTANCE.addPrefix("btl", "http://battles.com/");
-		Prefixer.INSTANCE.addPrefix("owl", "http://www.w3.org/2002/07/owl#");
-		Prefixer.INSTANCE.addPrefix("foaf", "http://xmlns.com/foaf/0.1/");
-		Prefixer.INSTANCE.addPrefix("dbpedia-owl", "http://dbpedia.org/ontology/");
-		Prefixer.INSTANCE.addPrefix("xsd", "http://www.w3.org/2001/XMLSchema#");
     }
 
 	/**
@@ -74,7 +66,7 @@ public class Battle extends HttpServlet {
 			
 			RepositoryConnection rConn = sesameServer.getConnection();
 			
-			GraphQuery query = rConn.prepareGraphQuery(QueryLanguage.SPARQL, createRequest(request));
+			GraphQuery query = rConn.prepareGraphQuery(QueryLanguage.SPARQL, createSparqlRequest(request));
 			query.setIncludeInferred(true);
 			GraphQueryResult res = query.evaluate();
 			
@@ -87,7 +79,15 @@ public class Battle extends HttpServlet {
 				if(!map.containsKey(s.getSubject().toString())){
 					map.put(s.getSubject().toString(), new JSONObject());
 				}
-				map.get(s.getSubject().toString()).put(s.getPredicate().toString(), s.getObject().toString());
+				
+				if(map.get(s.getSubject().toString()).containsKey(s.getPredicate().toString())){
+					// Value of the given property already defined, let's keep the longest one (more precise for floats)
+					if(s.getObject().toString().length() > map.get(s.getSubject().toString()).get(s.getPredicate().toString()).toString().length() ){
+						map.get(s.getSubject().toString()).put(s.getPredicate().toString(), s.getObject().toString());
+					}
+				}else{
+					map.get(s.getSubject().toString()).put(s.getPredicate().toString(), s.getObject().toString());
+				}
 			}
 			
 			response.getWriter().append(JSONValue.toJSONString(map));
@@ -106,8 +106,8 @@ public class Battle extends HttpServlet {
 		
 	}
 	
-	private String createRequest(HttpServletRequest request){
-		
+	private String createSparqlRequest(HttpServletRequest request){
+		boolean shortBattle = false;
 		int isqno = -1;
 		int year = 0;
 		boolean hasDate = false;
@@ -124,6 +124,15 @@ public class Battle extends HttpServlet {
 		}else{
 			limit = 1000;
 		}
+
+		if(request.getParameter("short") != null){
+			try{
+				shortBattle = BooleanUtils.toBoolean(request.getParameter("short"));
+			}catch(NumberFormatException e){
+				
+			}
+		}
+		
 		if(request.getParameter("year") != null){
 			try{
 				year = Integer.valueOf(request.getParameter("year"));
@@ -171,9 +180,9 @@ public class Battle extends HttpServlet {
 				// Wrong format, doing normal request
 			}
 		}
-		String result = Prefixer.INSTANCE.toString() + "\n"+
-						"CONSTRUCT{ ?entity ?rel ?obj . } "+
-						"WHERE {" ;
+		String result = Prefixer.INSTANCE.toString() + "\nCONSTRUCT{ "+
+						(shortBattle ? "?entity rdfs:label ?label ; geo:lat ?lat ; geo:long ?long ; btl:isqno ?isqno . " : " ?entity ?rel ?obj . " )+
+						"}\nWHERE {" ;
 		
 		String subRequest = "?entity a btl:Battle ; \n";
 		
@@ -181,7 +190,7 @@ public class Battle extends HttpServlet {
 			subRequest += "\nbtl:isqno \""+isqno+"\"^^xsd:int ;\n";
 		
 		result += 		subRequest + 
-							"?rel ?obj "+
+							(shortBattle ? " rdfs:label ?label ; geo:lat ?lat ; geo:long ?long ; btl:isqno ?isqno " : "?rel ?obj " )+
 							(hasDate ? ";\n dbpedia-owl:date ?date" : "")+
 							"."+
 							(hasDate ? "\nFILTER(?date >= \""+minDate+"\"^^xsd:date)\nFILTER(?date <= \""+maxDate+"\"^^xsd:date)\n" : "")

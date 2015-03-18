@@ -17,6 +17,16 @@ public class Prefixer {
 	 */
 	private Prefixer(){
 		prefixes = new ArrayList<Prefix>();
+		this.addPrefix("dbpedia", "http://dbpedia.org/resource/");
+		this.addPrefix("geo", "http://www.w3.org/2003/01/geo/wgs84_pos#");
+		this.addPrefix("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+		this.addPrefix("dbo", "http://dbpedia.org/ontology/");
+		this.addPrefix("btl", "http://battles.com/");
+		this.addPrefix("owl", "http://www.w3.org/2002/07/owl#");
+		this.addPrefix("foaf", "http://xmlns.com/foaf/0.1/");
+		this.addPrefix("dbpedia-owl", "http://dbpedia.org/ontology/");
+		this.addPrefix("xsd", "http://www.w3.org/2001/XMLSchema#");
+		this.addPrefix("geo", "http://www.w3.org/2003/01/geo/wgs84_pos#");
 	}
 	
 	/**

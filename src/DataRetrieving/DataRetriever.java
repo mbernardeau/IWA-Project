@@ -82,13 +82,6 @@ public class DataRetriever implements Job {
 				*/
 				// To close the connection
 				
-				Prefixer.INSTANCE.addPrefix("dbpedia", "http://dbpedia.org/resource/");
-				Prefixer.INSTANCE.addPrefix("geo", "http://www.w3.org/2003/01/geo/wgs84_pos#");
-				Prefixer.INSTANCE.addPrefix("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-				Prefixer.INSTANCE.addPrefix("dbo", "http://dbpedia.org/ontology/");
-				Prefixer.INSTANCE.addPrefix("btl", "http://battles.com/");
-				Prefixer.INSTANCE.addPrefix("owl", "http://www.w3.org/2002/07/owl#");
-				Prefixer.INSTANCE.addPrefix("foaf", "http://xmlns.com/foaf/0.1/");
 				/*
 				SparqlConstructQueryer DBPediaQueryer = new SparqlConstructQueryer("http://dbpedia.org/sparql", aConn);
 				
@@ -132,22 +125,26 @@ public class DataRetriever implements Job {
 				TupleQueryResult res = rConn.prepareTupleQuery(QueryLanguage.SPARQL,Prefixer.INSTANCE.toString() + "\nSELECT ?dbentity WHERE{ ?battle a btl:Battle ; owl:sameAs ?dbentity . }").evaluate();
 				rConn.commit();
 				
-				
+				int i = 0;
+				int j = 0;
 				while(res.hasNext()){
 					BindingSet b = res.next();
-					
-					
+					j++;
 					if(b != null){
 						Value dbentity = b.getBinding("dbentity").getValue();
-						SparqlConstructQueryer DBPediaQueryer = new SparqlConstructQueryer("http://dbpedia.org/sparql", rConn);
-					
-						DBPediaQueryer.query("\nCONSTRUCT{ <"+dbentity+"> ?pred ?obj . }WHERE{ <"+dbentity+"> ?pred ?obj . FILTER(!isLiteral(?obj) || lang(?obj) = \"\" || langMatches(lang(?obj), \"EN\"))}");
-					
-						DBPediaQueryer.save();
+						if(dbentity.toString().startsWith("http://dbpedia.org/resource/")){
+							i++;
+							SparqlConstructQueryer DBPediaQueryer = new SparqlConstructQueryer("http://dbpedia.org/sparql", rConn);
+						
+							DBPediaQueryer.query("\nCONSTRUCT{ <"+dbentity+"> ?pred ?obj ; geo:lat ?lat ; geo:long ?long . }WHERE{ <"+dbentity+"> ?pred ?obj .  OPTIONAL { <"+dbentity+"> dbpedia-owl:place ?place. ?place geo:lat ?lat ; geo:long ?long . } FILTER(!isLiteral(?obj) || lang(?obj) = \"\" || langMatches(lang(?obj), \"EN\"))\nFILTER(?pred != owl:sameAs)}");
+						
+							DBPediaQueryer.save();
+						}
 					}else{
 						/// TODO : try to find a dbpedia entity, even if not provided
 					}
 				}
+				
 				
 				rConn.close();
 				
