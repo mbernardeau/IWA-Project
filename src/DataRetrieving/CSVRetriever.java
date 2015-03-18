@@ -45,28 +45,28 @@ public class CSVRetriever {
 		String [] nextLine;
 		String [] headers = reader.readNext();
 
-		TupleQueryResult res = stardogConnection.prepareTupleQuery(QueryLanguage.SPARQL, Prefixer.INSTANCE.toString() + "\nSELECT ?instance ?short ?type WHERE{ {?instance a btl:wx1 ; btl:short ?short ; a ?type . } UNION {?instance a btl:wx2 ; btl:short ?short ; a ?type . } UNION {?instance a btl:wx3 ; btl:short ?short ; a ?type . } UNION {?instance a btl:wx4 ; btl:short ?short ; a ?type . } FILTER(?type != owl:Thing)}").evaluate();
+		TupleQueryResult res = stardogConnection.prepareTupleQuery(QueryLanguage.SPARQL, Prefixer.INSTANCE.toString() + "\nSELECT ?instance ?short ?type WHERE{ {?instance a btl:Wx1 ; btl:short ?short ; a ?type . } UNION {?instance a btl:Wx2 ; btl:short ?short ; a ?type . } UNION {?instance a btl:Wx3 ; btl:short ?short ; a ?type . } UNION {?instance a btl:Wx4 ; btl:short ?short ; a ?type . } FILTER(?type != owl:Thing)}").evaluate();
 		while(res.hasNext()){
 			BindingSet set = res.next();
 			if(shorts.get(set.getBinding("type").getValue().toString()) == null){
-				initObjectProperty(set.getBinding("type").getValue().toString());
+				initObjectProperty(set.getBinding("type").getValue().toString().replace("http://battles.com/", ""));
 				shorts.put(set.getBinding("type").getValue().toString(), new HashMap<String, String>());
 			}
 			shorts.get(set.getBinding("type").getValue().toString()).put(set.getBinding("short").getValue().toString().replace("\"", ""), set.getBinding("instance").getValue().toString().replace("\"", ""));	
 		}
 
 		while ((nextLine = reader.readNext()) != null) {
-			res = stardogConnection.prepareTupleQuery(QueryLanguage.SPARQL, Prefixer.INSTANCE + "\nSELECT ?battle WHERE{ ?battle btl:isqno "+nextLine[0]+" . }")
+			res = stardogConnection.prepareTupleQuery(QueryLanguage.SPARQL, Prefixer.INSTANCE + "\nSELECT ?battle WHERE{ ?battle btl:isqno \""+nextLine[0]+"\"^^xsd:int . }")
 					.evaluate();
-			if(res.hasNext()){
+			while(res.hasNext()){
 				URI battleEntity  = vf.createURI(res.next().getBinding("battle").getValue().stringValue());
 
 				for(int i = 2; i < nextLine.length; i++){
-					Map<String, String> wx = shorts.get(BTL + headers[i]);
+					Map<String, String> wx = shorts.get(BTL + toUpper(headers[i], '_'));
 
 					if(nextLine[i] != null && nextLine[i].length()>0 && wx.get(nextLine[i]) != null)
 						stardogConnection.add(vf.createStatement(battleEntity,
-								createEntity(BTL, headers[i]),
+								vf.createURI(BTL, headers[i]),
 								vf.createURI(wx.get(nextLine[i]))));
 				}
 			}
@@ -93,7 +93,7 @@ public class CSVRetriever {
 
 		while ((nextLine = reader.readNext()) != null) {
 			if(nextLine[1] != null  && nextLine[1].length()>0){
-				addInstance(nextLine[1], name);
+				addInstance(nextLine[1], toUpper(name, '_'));
 				stardogConnection.add(vf.createStatement(createEntity(BTL, nextLine[1]),
 						vf.createURI(BTL, "short"),
 						vf.createLiteral(nextLine[0])));
@@ -185,10 +185,7 @@ public class CSVRetriever {
 			if(nextLine[3] != null && nextLine[3].length() > 0){
 				TupleQueryResult res = stardogConnection.prepareTupleQuery(QueryLanguage.SPARQL, Prefixer.INSTANCE + "\nSELECT ?battle WHERE{ ?battle btl:isqno \""+nextLine[0]+"\"^^xsd:int . }")
 						.evaluate();
-				if(nextLine[0].equals("347")){
-					System.out.println("Itération :"+nextLine[0]);
-				}
-				
+
 				while(res.hasNext()){
 					URI battleEntity  = vf.createURI(res.next().getBinding("battle").getValue().stringValue());
 
