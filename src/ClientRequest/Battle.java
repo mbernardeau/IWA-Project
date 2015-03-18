@@ -153,7 +153,7 @@ public class Battle extends HttpServlet {
 				
 			}
 		}
-		if(request.getParameter("minyear") != null){
+		if(request.getParameter("maxyear") != null){
 			try{
 				int maxyear = Integer.valueOf(request.getParameter("maxyear"));
 				hasDate=true;

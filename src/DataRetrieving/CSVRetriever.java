@@ -152,9 +152,10 @@ public class CSVRetriever {
 				stardogConnection.add(vf.createStatement(battleEntity, 
 						vf.createURI(OWL, "sameAs"),
 						vf.createURI(nextLine[44])));
-				stardogConnection.add(vf.createStatement(vf.createURI(nextLine[44]), 
+				
+				/*stardogConnection.add(vf.createStatement(vf.createURI(nextLine[44]), 
 						vf.createURI(OWL, "sameAs"),
-						battleEntity));
+						battleEntity));*/
 			}
 			
 			for(Integer column : toAdd){
@@ -182,15 +183,20 @@ public class CSVRetriever {
 
 		while ((nextLine = reader.readNext()) != null) {
 			if(nextLine[3] != null && nextLine[3].length() > 0){
-				TupleQueryResult res = stardogConnection.prepareTupleQuery(QueryLanguage.SPARQL, Prefixer.INSTANCE + "\nSELECT ?battle WHERE{ ?battle btl:isqno "+nextLine[0]+" . }")
+				TupleQueryResult res = stardogConnection.prepareTupleQuery(QueryLanguage.SPARQL, Prefixer.INSTANCE + "\nSELECT ?battle WHERE{ ?battle btl:isqno \""+nextLine[0]+"\"^^xsd:int . }")
 						.evaluate();
-				if(res.hasNext()){
+				if(nextLine[0].equals("347")){
+					System.out.println("Itération :"+nextLine[0]);
+				}
+				
+				while(res.hasNext()){
 					URI battleEntity  = vf.createURI(res.next().getBinding("battle").getValue().stringValue());
 
 					if(!commanders.contains(nextLine[3])){ // Commander is not already defined
 						addInstance(nextLine[3], "Commander");
 						commanders.add(nextLine[3]);
 					}
+					
 					if(nextLine[4] != null &&  nextLine[4].length() > 5)
 						stardogConnection.add(vf.createStatement(createEntity(BTL, nextLine[3]), 
 								vf.createURI(FOAF, "isPrimaryTopicOf"),
@@ -207,7 +213,6 @@ public class CSVRetriever {
 							));
 				}
 			}
-
 		}
 
 		stardogConnection.commit();
@@ -243,7 +248,7 @@ public class CSVRetriever {
 
 
 	private URI createEntity(String context, String name){
-		return vf.createURI(context, toUpper(name, '_'));
+		return vf.createURI(context, toUpper(name, '_').replace('/', '_'));
 	}
 
 	private void initDatatypeProperty(String name) throws StardogException, RepositoryException{
@@ -251,10 +256,10 @@ public class CSVRetriever {
 				vf.createURI(BTL, name), 
 				vf.createURI(RDF, "type"), 
 				vf.createURI(OWL, "DatatypeProperty")));
-		stardogConnection.add(vf.createStatement(
+		/*stardogConnection.add(vf.createStatement(
 				vf.createURI(BTL, name), 
 				vf.createURI(RDFS, "subPropertyOf"), 
-				vf.createURI(RDF, "Property")));
+				vf.createURI(RDF, "Property")));*/
 	}
 
 	private void initObjectProperty(String name) throws StardogException, RepositoryException{
