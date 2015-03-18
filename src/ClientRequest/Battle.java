@@ -54,13 +54,7 @@ public class Battle extends HttpServlet {
 		
 		
 		try {
-			/*Connection aConn = ConnectionConfiguration
-			        .to(DB_NAME)
-			        .credentials("admin", "admin")
-			        .server(LOCAL_DB_SERVER)
-			        .reasoning(ReasoningType.SL)
-			        .connect();
-			*/
+
 			Repository sesameServer = new HTTPRepository(LOCAL_DB_SERVER,DB_NAME);  
 			sesameServer.initialize(); 
 			
