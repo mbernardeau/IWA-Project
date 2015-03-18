@@ -27,6 +27,7 @@ public class Prefixer {
 		this.addPrefix("dbpedia-owl", "http://dbpedia.org/ontology/");
 		this.addPrefix("xsd", "http://www.w3.org/2001/XMLSchema#");
 		this.addPrefix("geo", "http://www.w3.org/2003/01/geo/wgs84_pos#");
+		this.addPrefix("dbpprop", "http://dbpedia.org/property/");
 	}
 	
 	/**

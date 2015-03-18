@@ -108,7 +108,11 @@ public class Battle extends HttpServlet {
 		LocalDate minDate = null;
 		LocalDate maxDate = LocalDate.now();
 		int limit;
+		String commander = null;
 		
+		if(request.getParameter("commander") != null){
+			commander = request.getParameter("commander");
+		}
 		if(request.getParameter("limit") != null){
 			try{
 				limit = Integer.valueOf(request.getParameter("limit"));
@@ -186,8 +190,10 @@ public class Battle extends HttpServlet {
 		result += 		subRequest + 
 							(shortBattle ? " rdfs:label ?label ; geo:lat ?lat ; geo:long ?long ; btl:isqno ?isqno " : "?rel ?obj " )+
 							(hasDate ? ";\n dbpedia-owl:date ?date" : "")+
+							(commander != null ? ";\ndbpprop:commander ?commander " : "")+
 							"."+
-							(hasDate ? "\nFILTER(?date >= \""+minDate+"\"^^xsd:date)\nFILTER(?date <= \""+maxDate+"\"^^xsd:date)\n" : "")
+							(hasDate ? "\nFILTER(?date >= \""+minDate+"\"^^xsd:date)\nFILTER(?date <= \""+maxDate+"\"^^xsd:date)\n" : "")+
+							(commander != null ? "\nFILTER(regex(?commander, \""+commander+"\", \"i\")) " : "")
 							+"}"+
 						"LIMIT "+limit;
 		
