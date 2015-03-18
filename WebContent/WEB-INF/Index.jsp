@@ -115,7 +115,10 @@
 		var sub = "<h3>Year:"+document.getElementById("Year").value+"</h3>"
 		var text = "This where the information text can go. It even features overflow. Although I doubt I could write such an interesting and long bit of information to try this feature out. This is an elaboration on text_summary which should be inserted in the marker window.";
 		var img = "<img src=\""+img_test+"\" class=\"img-responsive\" alt=\"test\">";
-		document.getElementById("information_window").innerHTML = head+sub+text+text+text+img;
+		var year = document.getElementById("Year").value;
+		var tmp = query_build("Search Commander", "Search Place", year, "off");
+		var link = "<a href=\"" + tmp + "\"> sourcy </a>";
+		document.getElementById("information_window").innerHTML = head+sub+text+text+text+img+link;
 	}
 	
 	//small function to print the value of the slider
@@ -124,6 +127,75 @@
 		var goal = document.getElementById(val2);
 		goal.value = temp.value;
 	}
+	
+	//builds the query vip func
+	function query_build(val_com, val_place, val_year, val_short){
+		//basic string url
+		var base = "http://localhost:8080/IWA-Project/Battle?short="
+		//change parameters based on what is filled out
+		
+		//check for short window
+		if(val_short == "on"){
+				base = base + "on&limit=50000";
+			}
+		//these limits seem high, however due to later filtering on our part these numbers usually turn up lower and we are running locally :)
+		else{
+			base = base + "off&limit=1000";
+		}
+		
+		
+		//check for commander
+		if(val_com !="Search Commander"){
+			base = base + val_com
+		}
+		else{
+			base = base;
+		}
+		
+		//check for place
+		if(val_place !="Search Place"){
+			base = base + val_place;
+		}
+		else{
+			base = base;
+		}
+		
+		//This is a stupid limit, but it is the easiest to enforce atm
+		if(val_year != 2015){
+			base = base + "&year=" + val_year;
+		}
+		else{
+			base = base;
+		}
+		
+		return base;		
+		
+	}
+	
+	//test code here:
+	var wikipediaHTMLResult = function(data) {
+		var readData = $('<div>' + data.parse.text["*"] + '</div>');
+		// handle redirects
+		var redirect = readData.find('li:contains("REDIRECT") a').text();
+		if(redirect != '') {
+			callWikipediaAPI(redirect);
+			return;
+		}
+		var box = readData.find('.infobox');
+		var binomialName = box.find('.binomial').text();
+		var fishName = box.find('th').first().text();
+		var imageURL = null;
+		// Check if page has images
+		if(data.parse.images.length >= 1) {
+			imageURL = box.find('img').first().attr('src');
+		}
+			$('#insertTest').append('<div><img src="'+ imageURL + '"/>'+ fishName +' <i>('+ binomialName +')</i></div>');
+		};
+		function callWikipediaAPI(wikipediaPage) {
+		// http://www.mediawiki.org/wiki/API:Parsing_wikitext#parse
+		$.getJSON('http://en.wikipedia.org/w/api.php?action=parse&format=json&callback=?', {page:wikipediaPage, prop:'text|images', uselang:'en'}, wikipediaHTMLResult);
+	}
+	
 
 </script>
 </head>

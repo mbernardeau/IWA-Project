@@ -5,7 +5,8 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>Insert title here</title>
+<title>History Mashup</title>
+<link rel="shortcut icon" type="image/gif" href="http://static.wfu.edu/images/students/scroll_icon.gif"/>
 <script type="text/javascript" src="/lib/jquery-1.11.2.min.js"></script>
 </head>
 <body>
