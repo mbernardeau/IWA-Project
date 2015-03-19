@@ -109,7 +109,13 @@ public class Battle extends HttpServlet {
 		LocalDate maxDate = LocalDate.now();
 		int limit;
 		String commander = null;
-		
+		String type = "btl:Battle";
+		if(request.getParameter("weather") != null){
+			if(request.getParameter("weather").equals("sunny"))
+				type="btl:SunnyBattle";
+			else if(request.getParameter("weather").equals("rainy"))
+				type="btl:RainyBattle";
+		}
 		if(request.getParameter("commander") != null){
 			commander = request.getParameter("commander");
 		}
@@ -182,7 +188,7 @@ public class Battle extends HttpServlet {
 						(shortBattle ? "?entity rdfs:label ?label ; geo:lat ?lat ; geo:long ?long ; btl:isqno ?isqno . " : " ?entity ?rel ?obj . " )+
 						"}\nWHERE {" ;
 		
-		String subRequest = "?entity a btl:Battle ; \n";
+		String subRequest = "?entity a "+type+" ; \n";
 		
 		if(isqno != -1)
 			subRequest += "\nbtl:isqno \""+isqno+"\"^^xsd:int ;\n";
