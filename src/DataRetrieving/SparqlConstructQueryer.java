@@ -14,7 +14,7 @@ import com.complexible.stardog.StardogException;
 public class SparqlConstructQueryer extends SparqlQueryer<Statement> {
 	private static final Logger logger = LogManager.getLogger(SparqlConstructQueryer.class);
 	RepositoryConnection stardogConnection;
-	
+
 	/**
 	 * Constructor of the SparqlQueryer class
 	 * @param service The sparql endpoint to query
@@ -24,8 +24,8 @@ public class SparqlConstructQueryer extends SparqlQueryer<Statement> {
 		super(service);
 		this.stardogConnection = stardogConnection;
 	}
-	
-	
+
+
 	/**
 	 * Saves the result into the stardog local database
 	 * @throws StardogException 
@@ -42,25 +42,31 @@ public class SparqlConstructQueryer extends SparqlQueryer<Statement> {
 				System.out.println("\n"+i+" triples saved to database.");
 			}
 			i++;
-			
+
 		}
 		stardogConnection.commit();
 		System.out.println("\nSaving Operation done : total of "+ i+" triples saved to database.");
-		
+
 	}
 
 
 	@Override
 	protected QueryResult<Statement> queryWithLimit(String query, int limit, int offset) {
 		QueryResult<Statement> res = null;
-		try {
-			this.prepareQuery(query, limit, offset);
-			
-			if (this.query instanceof GraphQuery) {
-			    res = ((GraphQuery) this.query).evaluate();
+		boolean done = false;
+
+		while(!done){
+			try {
+				this.prepareQuery(query, limit, offset);
+
+				if (this.query instanceof GraphQuery) {
+					res = ((GraphQuery) this.query).evaluate();
+					done = true;
+				}
+			} catch (QueryEvaluationException e) {
+				logger.error("The query could not be evaluated :\n"+query, e);
+				logger.error("\nRetrying...\n");
 			}
-		} catch (QueryEvaluationException e) {
-			logger.error("The query could not be evaluated.\n", e);
 		}
 		return res;
 	}

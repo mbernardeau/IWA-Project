@@ -84,7 +84,7 @@ public class DataRetriever implements Job {
 							i++;
 							SparqlConstructQueryer DBPediaQueryer = new SparqlConstructQueryer("http://dbpedia.org/sparql", rConn);
 						
-							DBPediaQueryer.query("\nCONSTRUCT{ <"+dbentity+"> ?pred ?obj ; geo:lat ?lat ; geo:long ?long . }WHERE{ <"+dbentity+"> ?pred ?obj .  OPTIONAL { <"+dbentity+"> dbpedia-owl:place ?place. ?place geo:lat ?lat ; geo:long ?long . } FILTER(!isLiteral(?obj) || lang(?obj) = \"\" || langMatches(lang(?obj), \"EN\"))\nFILTER(?pred != owl:sameAs)}");
+							DBPediaQueryer.query("\nCONSTRUCT{ <"+dbentity+"> ?pred ?obj . ?place geo:lat ?lat ; geo:long ?long . }WHERE{ <"+dbentity+"> ?pred ?obj .  OPTIONAL { <"+dbentity+"> dbpedia-owl:place ?place. ?place geo:lat ?lat ; geo:long ?long . } FILTER(!isLiteral(?obj) || lang(?obj) = \"\" || langMatches(lang(?obj), \"EN\"))\nFILTER(?pred != owl:sameAs)}");
 						
 							DBPediaQueryer.save();
 						}

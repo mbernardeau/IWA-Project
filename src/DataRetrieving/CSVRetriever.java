@@ -49,7 +49,7 @@ public class CSVRetriever {
 		while(res.hasNext()){
 			BindingSet set = res.next();
 			if(shorts.get(set.getBinding("type").getValue().toString()) == null){
-				initObjectProperty(set.getBinding("type").getValue().toString().replace("http://battles.com/", "").toLowerCase());
+				initObjectProperty(set.getBinding("type").getValue().toString().replace("http://battles.com/", "").replace("(", "").replace(")", "").toLowerCase());
 				shorts.put(set.getBinding("type").getValue().toString(), new HashMap<String, String>());
 			}
 			shorts.get(set.getBinding("type").getValue().toString()).put(set.getBinding("short").getValue().toString().replace("\"", ""), set.getBinding("instance").getValue().toString().replace("\"", ""));	
@@ -93,8 +93,8 @@ public class CSVRetriever {
 
 		while ((nextLine = reader.readNext()) != null) {
 			if(nextLine[1] != null  && nextLine[1].length()>0){
-				addInstance(nextLine[1], toUpper(name, '_'));
-				stardogConnection.add(vf.createStatement(createEntity(BTL, nextLine[1]),
+				addInstance(nextLine[1].replace("(", "").replace(")", ""), toUpper(name, '_').replace("(", "").replace(")", ""));
+				stardogConnection.add(vf.createStatement(createEntity(BTL, toUpper(nextLine[1].replace("(", "").replace(")", ""), '_')),
 						vf.createURI(BTL, "short"),
 						vf.createLiteral(nextLine[0])));
 			}
@@ -232,6 +232,8 @@ public class CSVRetriever {
 	}
 
 	private void addInstance(String name, String clazz) throws StardogException, RepositoryException{
+		name = name.replace('/', '_').replace(")", "").replace("(", "").replace(",", "");
+		clazz = clazz.replace('/', '_').replace(")", "").replace("(", "").replace(",", "");
 		stardogConnection.add(vf.createStatement(createEntity(BTL, name),
 				vf.createURI(RDF, "type"),
 				vf.createURI(BTL, clazz)));
@@ -245,7 +247,7 @@ public class CSVRetriever {
 
 
 	private URI createEntity(String context, String name){
-		return vf.createURI(context, toUpper(name, '_').replace('/', '_'));
+		return vf.createURI(context, toUpper(name, '_').replace('/', '_').replace(")", "").replace("(", ""));
 	}
 
 	private void initDatatypeProperty(String name) throws StardogException, RepositoryException{
