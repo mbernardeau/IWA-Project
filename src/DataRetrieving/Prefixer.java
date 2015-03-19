@@ -30,6 +30,15 @@ public class Prefixer {
 		this.addPrefix("dbpprop", "http://dbpedia.org/property/");
 	}
 	
+	
+	 public String getURL(String prefix){
+		 if(prefixes.contains(new Prefix(prefix, null))){
+			 return prefixes.get(prefixes.indexOf(new Prefix(prefix, null))).url;
+		 }else{
+			 return null;
+		 }
+	 }
+	 
 	/**
 	 * Add the prefix to the list
 	 * @param prefix Prefix

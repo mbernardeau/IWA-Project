@@ -1,6 +1,8 @@
 package DataRetrieving;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.InputStream;
 
 import org.openrdf.model.Value;
 import org.openrdf.query.BindingSet;
@@ -9,6 +11,7 @@ import org.openrdf.query.TupleQueryResult;
 import org.openrdf.repository.Repository;
 import org.openrdf.repository.RepositoryConnection;
 import org.openrdf.repository.http.HTTPRepository;
+import org.openrdf.rio.RDFFormat;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -92,7 +95,10 @@ public class DataRetriever implements Job {
 						/// TODO : try to find a dbpedia entity, even if not provided
 					}
 				}
-				
+				String s = Prefixer.INSTANCE.toString() + "###  http://battles.com/RainyBattle\n\nbtl:RainyBattle rdf:type owl:Class ;\n                \n                owl:equivalentClass [ rdf:type owl:Class ;\n                                      owl:intersectionOf ( btl:Battle\n                                                           [ rdf:type owl:Class ;\n                                                             owl:unionOf ( [ rdf:type owl:Restriction ;\n                                                                             owl:onProperty btl:wx2 ;\n                                                                             owl:hasValue btl:Heavy_Precipitatiion\n                                                                           ]\n                                                                           [ rdf:type owl:Restriction ;\n                                                                             owl:onProperty btl:wx2 ;\n                                                                             owl:hasValue btl:Light_Precipitation\n                                                                           ]\n                                                                         )\n                                                           ]\n                                                           [ rdf:type owl:Restriction ;\n                                                             owl:onProperty btl:wx1 ;\n                                                             owl:hasValue btl:Wet\n                                                           ]\n                                                         )\n                                    ] ;\n                \n                rdfs:subClassOf btl:Battle .\n				\n###  http://battles.com/CloudyBattles\n\nbtl:CloudyBattles rdf:type owl:Class ;\n                  \n                  owl:equivalentClass [ rdf:type owl:Class ;\n                                        owl:intersectionOf ( btl:Battle\n                                                             [ rdf:type owl:Restriction ;\n                                                               owl:onProperty btl:wx2 ;\n                                                               owl:hasValue btl:Overcast_No_Precipitation\n                                                             ]\n                                                           )\n                                      ] ;\n                  \n                  rdfs:subClassOf btl:Battle .\n				  \n###  http://battles.com/SunnyBattle\n\nbtl:SunnyBattle rdf:type owl:Class ;\n                \n                owl:equivalentClass [ rdf:type owl:Class ;\n                                      owl:intersectionOf ( btl:Battle\n                                                           [ rdf:type owl:Restriction ;\n                                                             owl:onProperty btl:wx1 ;\n                                                             owl:hasValue btl:Dry\n                                                           ]\n                                                           [ rdf:type owl:Restriction ;\n                                                             owl:onProperty btl:wx2 ;\n                                                             owl:hasValue btl:Sunny_No_Precipitation\n                                                           ]\n                                                         )\n                                    ] ;\n                \n                rdfs:subClassOf btl:Battle .\n				\n\n###  http://battles.com/\n\ngeo:lat rdf:type owl:DatatypeProperty ;\n          \n          rdfs:domain btl:Battle ;\n          \n          owl:propertyChainAxiom ( dbpedia-owl:place\n                                   geo:lat\n                                 ) .\ngeo:long rdf:type owl:DatatypeProperty ;\n          \n          rdfs:domain btl:Battle ;\n          \n          owl:propertyChainAxiom ( dbpedia-owl:place\n                                   geo:long\n                                 ) .";
+						
+				InputStream is = new ByteArrayInputStream(s.getBytes());
+				rConn.add(is, Prefixer.INSTANCE.getURL("btl"), RDFFormat.TURTLE);
 				
 				rConn.close();
 				
