@@ -25,6 +25,11 @@
 		var infowindow = new google.maps.InfoWindow();
 		var short_info = "Battle of Lorem Ipsum";
 		var more_info_button = "<input type=\"button\" value=\"more info\" onclick=\"draw_info_window()\">";
+		//rain or sun icons to display battle weather
+		var b_weather_rainy = "http://icons.iconarchive.com/icons/icons8/android/64/Weather-Little-Rain-icon.png";
+		var b_weather_sunny = "http://uxrepo.com/static/icon-sets/meteo/png32/64/000000/sun-64-000000.png";
+		
+		
 		
 		/*
 		Here I will place some global endpoints that can be used to change and interface with DB's
@@ -32,12 +37,7 @@
 		the names should elaborate what they are for. 
 		The following function fills these values with test values, however could be used to change on search.
 		*/
-		var Commander_1;
-		var Commander_2;
-		var Battle_Start;
-		var Battle_End;
-		var Win;
-		var Condition;
+		var b_test;
 		var locations = [
 			['London', 51.508742,-0.120850, 4],
 			//['Coogee Beach', -33.923036, 151.259052, 5],
@@ -46,15 +46,6 @@
 			['unknown', -52.950198, -0.259302, 1]
 		];
 		
-		
-		function test_draw(){
-			Commander_1 = "Vasilii";
-			Commander_2 = "Sjoerd";
-			Battle_Start = 1805;
-			Battle_End = 1875;
-			Win = "Vasilii won";
-			Condition = "good";
-		}
 		
 		//inits the map
 		function initialize() {
@@ -107,18 +98,80 @@
 		}
 	}
 	
+	//test function JSON parse
+	var printy = function(o){
+    var str='';
+
+    for(var p in o){
+        if(typeof o[p] == 'string'){
+            str+= p + ': ' + o[p]+'; </br>';
+        }else{
+            str+= p + ': { </br>' + printy(o[p]) + '}';
+        }
+    }
+
+    return str;
+}
+	
+	
 	//draws more information about battle under the map
 	var img_test = "http://riverboatsmusic.com.au/wp-content/uploads/2014/09/1shuu4q3.wizardchan.test_.png"
 	//draws more information about battle under the map
 	function draw_info_window(){
-		var head = "<h2>Battle of Lorem Ipsum</h2>"
-		var sub = "<h3>Year:"+document.getElementById("Year").value+"</h3>"
-		var text = "This where the information text can go. It even features overflow. Although I doubt I could write such an interesting and long bit of information to try this feature out. This is an elaboration on text_summary which should be inserted in the marker window.";
-		var img = "<img src=\""+img_test+"\" class=\"img-responsive\" alt=\"test\">";
-		var year = document.getElementById("Year").value;
-		var tmp = query_build("Search Commander", "Search Place", year, "off");
-		var link = "<a href=\"" + tmp + "\"> sourcy </a>";
-		document.getElementById("information_window").innerHTML = head+sub+text+text+text+img+link;
+		//parameters to be filled:
+		var b_title = "Lorem Ipsum";
+		var b_summary = "This where the information text can go. It even features overflow. Although I doubt I could write such an interesting and long bit of information to try this feature out. This is an elaboration on text_summary which should be inserted in the marker window.";
+		var b_img = img_test;
+		var b_commander = "John Doe";
+		var b_weather = "<img src=\""+b_weather_rainy+"\" class=\"img-responsive\" alt=\"test\">";
+		//Call with query parameters
+		//should be range
+		var min_year = 1900;
+		var max_year = 2015;
+		var qu_test = /^(https?:\/\/)?$/;
+		var commander = document.getElementById("Commander").value;
+		var tmp = query_build(commander, "Search Place", min_year, "off");
+		$.getJSON(tmp, function(data){
+			//$('TEST').html('<p> JSONResponse:'+data+'<p>');
+			console.log(JSON.stringify(data, null, 4));
+			console.log(data);
+			
+			alert(printy(data));
+			var head = "<h2>"+b_title+"</h2>";
+			var sub = "<h3>Year:"+document.getElementById("Year").value+"</h3>";
+			var cond = "<br>Weather Condition: " +b_weather+"<br> Commanding Officer:"+b_commander+"<br>"; 
+			var text = printy(data);
+			text.replace(/^(http?:\/\/)?$/,'');
+			/*
+			text.replace(/http:\/\/dbpedia.org\/ontology\/-/g,'');
+			text.replace(/http:\/\/dbpedia.org\/property\/-/g,'');
+			text.replace(/http:\/\/www.w3.org\/2003\/01\/geo\/-/g,'');
+			text.replace(/http:\/\/www.w3.org\/2003\/01\/geo\/-/g,'');
+			text.replace(/http:\/\/purl.org\/dc\/terms\/-/g,'');
+			text.replace(/http:\/\/xmlns.com\/foaf\/0.1\/-/g,'');
+			*/
+			var img = "<img src=\""+b_img+"\" class=\"img-responsive\" alt=\"test\" >";
+			var link = "<a href=\"" + tmp + "\"> sourcy </a>";
+			document.getElementById("information_window").innerHTML = head+sub+cond+text+img+link;
+			//console.log(b_test);
+			/*
+			
+			var obj = jQuery.parseJSON(data);
+			console.log(obj);
+			//b_test = JSON.parse(data);
+			alert(obj.Display);
+			*/
+		});
+				
+		/*
+		//real output
+		var head = "<h2>"+b_title+"</h2>";
+		var sub = "<h3>Year:"+document.getElementById("Year").value+"</h3>";
+		var cond = "<br>Weather Condition: " +b_weather+"<br> Commanding Officer:"+b_commander+"<br>"; 
+		var text = b_test;
+		var img = "<img src=\""+b_img+"\" class=\"img-responsive\" alt=\"test\" >";
+		document.getElementById("information_window").innerHTML = head+sub+cond+text+img+link;
+		*/
 	}
 	
 	//small function to print the value of the slider
@@ -129,7 +182,7 @@
 	}
 	
 	//builds the query vip func
-	function query_build(val_com, val_place, val_year, val_short){
+	function query_build(val_com, val_place, val_minyear, val_short){
 		//basic string url
 		var base = "http://localhost:8080/IWA-Project/Battle?short="
 		//change parameters based on what is filled out
@@ -146,7 +199,7 @@
 		
 		//check for commander
 		if(val_com !="Search Commander"){
-			base = base + val_com
+			base = base +"&commander="+val_com;
 		}
 		else{
 			base = base;
@@ -161,8 +214,8 @@
 		}
 		
 		//This is a stupid limit, but it is the easiest to enforce atm
-		if(val_year != 2015){
-			base = base + "&year=" + val_year;
+		if(val_minyear != 2015){
+			base = base +"&minyear="+ val_minyear + "&maxyear=2015";
 		}
 		else{
 			base = base;
@@ -223,6 +276,7 @@
       <h3>Information</h3>        
       <div style="width:relative; height:380px; overflow: auto;right:0px;padding:20px;" >
 			<div id="information_window"></div>
+			TEST
 		</div>
     </div>
   </div>
