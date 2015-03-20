@@ -28,7 +28,8 @@
 		//rain or sun icons to display battle weather
 		var b_weather_rainy = "http://icons.iconarchive.com/icons/icons8/android/64/Weather-Little-Rain-icon.png";
 		var b_weather_sunny = "http://uxrepo.com/static/icon-sets/meteo/png32/64/000000/sun-64-000000.png";
-		
+		//test global
+		var match;
 		
 		
 		/*
@@ -37,7 +38,7 @@
 		the names should elaborate what they are for. 
 		The following function fills these values with test values, however could be used to change on search.
 		*/
-		var b_test;
+		var b_test='';
 		var locations = [
 			['London', 51.508742,-0.120850, 4],
 			//['Coogee Beach', -33.923036, 151.259052, 5],
@@ -105,6 +106,12 @@
     for(var p in o){
         if(typeof o[p] == 'string'){
             str+= p + ': ' + o[p]+'; </br>';
+			if(p == match){
+				console.log(p+"\n");
+				b_test = o[p]+"\n";
+				console.log(b_test);
+				break;
+			}
         }else{
             str+= p + ': { </br>' + printy(o[p]) + '}';
         }
@@ -132,16 +139,23 @@
 		var commander = document.getElementById("Commander").value;
 		var tmp = query_build(commander, "Search Place", min_year, "off");
 		$.getJSON(tmp, function(data){
-			//$('TEST').html('<p> JSONResponse:'+data+'<p>');
-			console.log(JSON.stringify(data, null, 4));
-			console.log(data);
-			
-			alert(printy(data));
+			//quick and dirty fix for reading in JSON with URL
+			//use match for the data to be matched to a certain URL
+			//test to check if JSON Data
+			//alert(printy(data));
+			//Match to battle title:
+			//match = "http://xmlns.com/foaf/0.1/name:";
+			//console.log(printy(data));
+			//b_title = printy(data);
 			var head = "<h2>"+b_title+"</h2>";
-			var sub = "<h3>Year:"+document.getElementById("Year").value+"</h3>";
+			//match = "http://dbpedia.org/ontology/date";
+			//var year = printy(data);
+			var year = 1899;
+			var sub = "<h3>Date:"+year+"</h3>";
 			var cond = "<br>Weather Condition: " +b_weather+"<br> Commanding Officer:"+b_commander+"<br>"; 
+			match = "http://dbpedia.org/ontology/abstract";
 			var text = printy(data);
-			text.replace(/^(http?:\/\/)?$/,'');
+			text.replace(/^(http?:\/\/)?$/g,'');
 			/*
 			text.replace(/http:\/\/dbpedia.org\/ontology\/-/g,'');
 			text.replace(/http:\/\/dbpedia.org\/property\/-/g,'');
@@ -152,7 +166,7 @@
 			*/
 			var img = "<img src=\""+b_img+"\" class=\"img-responsive\" alt=\"test\" >";
 			var link = "<a href=\"" + tmp + "\"> sourcy </a>";
-			document.getElementById("information_window").innerHTML = head+sub+cond+text+img+link;
+			document.getElementById("information_window").innerHTML = head+sub+cond+b_test+img+link;
 			//console.log(b_test);
 			/*
 			
