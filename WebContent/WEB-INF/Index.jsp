@@ -20,7 +20,7 @@
 		var level = 4;
 		var map;
 		var results;
-		
+		var min_year = 1900;
 		//for the infowindow under the marker
 		var infowindow = new google.maps.InfoWindow();
 		var short_info = "Battle of Lorem Ipsum";
@@ -72,7 +72,8 @@
 			geocoder.geocode( { 'address': address}, function(results, status) {
 			if (status == google.maps.GeocoderStatus.OK) {
 				map.setCenter(results[0].geometry.location);
-				draw_markers();
+				
+				draw_info_window();
 			}
 		else {
         alert("Geocode was not successful for the following reason: " + status);
@@ -93,7 +94,6 @@
 			return function() {
 				infowindow.setContent(short_info);
 				infowindow.open(map, marker);
-				draw_info_window();
 			}
 		})(marker, i));
 		}
@@ -113,6 +113,12 @@
 				break;
 			}
         }else{
+			if(p == match){
+				console.log(p+"\n");
+				b_test = o[p]+"\n";
+				console.log(b_test);
+				break;
+			}
             str+= p + ': { </br>' + printy(o[p]) + '}';
         }
     }
@@ -133,7 +139,7 @@
 		var b_weather = "<img src=\""+b_weather_rainy+"\" class=\"img-responsive\" alt=\"test\">";
 		//Call with query parameters
 		//should be range
-		var min_year = 1900;
+		min_year= document.getElementById("rangeVal").value;
 		var max_year = 2015;
 		var qu_test = /^(https?:\/\/)?$/;
 		var commander = document.getElementById("Commander").value;
@@ -144,17 +150,21 @@
 			//test to check if JSON Data
 			//alert(printy(data));
 			//Match to battle title:
-			//match = "http://xmlns.com/foaf/0.1/name:";
-			//console.log(printy(data));
-			//b_title = printy(data);
+			match = "http://xmlns.com/foaf/0.1/name";
+			printy(data);
+			b_title = b_test;
 			var head = "<h2>"+b_title+"</h2>";
-			//match = "http://dbpedia.org/ontology/date";
-			//var year = printy(data);
-			var year = 1899;
+			match = "http://dbpedia.org/ontology/date";
+			printy(data);
+			var year = b_test;
 			var sub = "<h3>Date:"+year+"</h3>";
+			match = "http://dbpedia.org/ontology/commander";
+			printy(data);
+			b_commander = b_test;
 			var cond = "<br>Weather Condition: " +b_weather+"<br> Commanding Officer:"+b_commander+"<br>"; 
 			match = "http://dbpedia.org/ontology/abstract";
-			var text = printy(data);
+			printy(data);
+			var text = b_test;
 			text.replace(/^(http?:\/\/)?$/g,'');
 			/*
 			text.replace(/http:\/\/dbpedia.org\/ontology\/-/g,'');
@@ -167,14 +177,8 @@
 			var img = "<img src=\""+b_img+"\" class=\"img-responsive\" alt=\"test\" >";
 			var link = "<a href=\"" + tmp + "\"> sourcy </a>";
 			document.getElementById("information_window").innerHTML = head+sub+cond+b_test+img+link;
-			//console.log(b_test);
-			/*
-			
-			var obj = jQuery.parseJSON(data);
-			console.log(obj);
-			//b_test = JSON.parse(data);
-			alert(obj.Display);
-			*/
+			short_info = b_title + ": "+year;
+			draw_markers();
 		});
 				
 		/*
