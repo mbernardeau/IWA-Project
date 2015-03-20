@@ -140,7 +140,7 @@
 		//Call with query parameters
 		//should be range
 		min_year= document.getElementById("rangeVal").value;
-		var max_year = 2015;
+		
 		var qu_test = /^(https?:\/\/)?$/;
 		var commander = document.getElementById("Commander").value;
 		var tmp = query_build(commander, "Search Place", min_year, "off");
@@ -233,7 +233,7 @@
 		
 		//This is a stupid limit, but it is the easiest to enforce atm
 		if(val_minyear != 2015){
-			base = base +"&minyear="+ val_minyear + "&maxyear=2015";
+			base = base +"&year=";
 		}
 		else{
 			base = base;
