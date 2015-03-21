@@ -23,7 +23,7 @@
 		var min_year = 1900;
 		//for the infowindow under the marker
 		var infowindow = new google.maps.InfoWindow();
-		var short_info = "Battle of Lorem Ipsum";
+		var short_info;
 		var more_info_button = "<input type=\"button\" value=\"more info\" onclick=\"draw_info_window()\">";
 		//rain or sun icons to display battle weather
 		var b_weather_rainy = "http://icons.iconarchive.com/icons/icons8/android/64/Weather-Little-Rain-icon.png";
@@ -40,12 +40,9 @@
 		*/
 		var b_test='';
 		var locations = [
-			['London', 51.508742,-0.120850, 4],
-			//['Coogee Beach', -33.923036, 151.259052, 5],
-			//['Cronulla Beach', -34.028249, 151.157507, 3],
-			//['Manly Beach', -33.80010128657071, 151.28747820854187, 2],
-			['unknown', -52.950198, -0.259302, 1]
 		];
+		//52	22 N	4	53
+		
 		
 		
 		//inits the map
@@ -59,6 +56,10 @@
   			map=new google.maps.Map(document.getElementById("googleMap"),mapProp);
 			document.getElementById("rangeVal").value = 1900;
 			document.getElementById("Year").value = 1900;
+			
+			for (i = 0; i < locations.length; i++){
+				console.log(locations[i][1][2]);
+			}
 		}
 		google.maps.event.addDomListener(window, 'load', initialize);
 		
@@ -88,6 +89,13 @@
 			marker = new google.maps.Marker({
 			position: new google.maps.LatLng(locations[i][1], locations[i][2]),
 			map: map
+		});
+		
+		var mark = new google.maps.LatLng(locations[0][1], locations[0][2]);
+		
+		map.setOptions({
+        center: mark,
+        zoom: level
 		});
 
 		google.maps.event.addListener(marker, 'click', (function(marker, i) {
@@ -133,7 +141,7 @@
 	function draw_info_window(){
 		//parameters to be filled:
 		var b_title = "Lorem Ipsum";
-		var b_summary = "This where the information text can go. It even features overflow. Although I doubt I could write such an interesting and long bit of information to try this feature out. This is an elaboration on text_summary which should be inserted in the marker window.";
+		var b_summary = "if you see this text something somewhere went horribly wrong";
 		var b_img = img_test;
 		var b_commander = "John Doe";
 		var b_weather = "<img src=\""+b_weather_rainy+"\" class=\"img-responsive\" alt=\"test\">";
@@ -141,14 +149,13 @@
 		//should be range
 		min_year= document.getElementById("rangeVal").value;
 		
-		var qu_test = /^(https?:\/\/)?$/;
 		var commander = document.getElementById("Commander").value;
 		var tmp = query_build(commander, "Search Place", min_year, "off");
 		$.getJSON(tmp, function(data){
 			//quick and dirty fix for reading in JSON with URL
 			//use match for the data to be matched to a certain URL
 			//test to check if JSON Data
-			//alert(printy(data));
+			console.log(printy(data));
 			//Match to battle title:
 			match = "http://xmlns.com/foaf/0.1/name";
 			printy(data);
@@ -156,16 +163,23 @@
 			var head = "<h2>"+b_title+"</h2>";
 			match = "http://dbpedia.org/ontology/date";
 			printy(data);
-			var year = b_test;
+			var year = b_test.substring(b_test.indexOf("\"")+1,b_test.lastIndexOf("+"));
 			var sub = "<h3>Date:"+year+"</h3>";
 			match = "http://dbpedia.org/ontology/commander";
 			printy(data);
-			b_commander = b_test;
+			b_commander = b_test.substring(b_test.lastIndexOf("\/")+1,b_test.length);
 			var cond = "<br>Weather Condition: " +b_weather+"<br> Commanding Officer:"+b_commander+"<br>"; 
 			match = "http://dbpedia.org/ontology/abstract";
 			printy(data);
 			var text = b_test;
 			text.replace(/^(http?:\/\/)?$/g,'');
+			match = "http://www.w3.org/2003/01/geo/wgs84_pos#lat";
+			printy(data);
+			var lat = b_test.substring(b_test.indexOf("\"")+1,b_test.lastIndexOf("\""));
+			console.log(lat);
+			match = "http://www.w3.org/2003/01/geo/wgs84_pos#long";
+			printy(data);
+			var lng = b_test.substring(b_test.indexOf("\"")+1,b_test.lastIndexOf("\""));
 			/*
 			text.replace(/http:\/\/dbpedia.org\/ontology\/-/g,'');
 			text.replace(/http:\/\/dbpedia.org\/property\/-/g,'');
@@ -174,10 +188,12 @@
 			text.replace(/http:\/\/purl.org\/dc\/terms\/-/g,'');
 			text.replace(/http:\/\/xmlns.com\/foaf\/0.1\/-/g,'');
 			*/
+			b_img = mediawiki(b_title);
 			var img = "<img src=\""+b_img+"\" class=\"img-responsive\" alt=\"test\" >";
-			var link = "<a href=\"" + tmp + "\"> sourcy </a>";
-			document.getElementById("information_window").innerHTML = head+sub+cond+b_test+img+link;
+			var link = "<a href=\"" + tmp + "\"> source </a>";
+			document.getElementById("information_window").innerHTML = head+sub+cond+text+img+link;
 			short_info = b_title + ": "+year;
+			locations.push([short_info,lat,lng, 1]);
 			draw_markers();
 		});
 				
@@ -267,6 +283,16 @@
 		$.getJSON('http://en.wikipedia.org/w/api.php?action=parse&format=json&callback=?', {page:wikipediaPage, prop:'text|images', uselang:'en'}, wikipediaHTMLResult);
 	}
 	
+	function mediawiki(term){
+		req_str = "http://en.wikipedia.org/w/api.php?action=query&titles="+term+"&prop=images&imlimit=20&format=json";
+		var img;
+		$.getJSON(req_str, function(data){
+			img = data.query;
+			console.log(img);
+		});
+		return img;
+	}
+	
 
 </script>
 </head>
@@ -294,7 +320,6 @@
       <h3>Information</h3>        
       <div style="width:relative; height:380px; overflow: auto;right:0px;padding:20px;" >
 			<div id="information_window"></div>
-			TEST
 		</div>
     </div>
   </div>
