@@ -30,7 +30,15 @@
 		var b_weather_sunny = "http://uxrepo.com/static/icon-sets/meteo/png32/64/000000/sun-64-000000.png";
 		//test global
 		var match;
+		var result_query = [];
+		var n = -1;
 		
+		//parameters to be filled:
+		var b_title = [];
+		var year = [];
+		var b_summary = [];
+		var b_img = img_test;
+		var b_commander = [];
 		
 		/*
 		Here I will place some global endpoints that can be used to change and interface with DB's
@@ -73,8 +81,9 @@
 			geocoder.geocode( { 'address': address}, function(results, status) {
 			if (status == google.maps.GeocoderStatus.OK) {
 				map.setCenter(results[0].geometry.location);
+				information_stash();
+				//draw_info_window();
 				
-				draw_info_window();
 			}
 		else {
         alert("Geocode was not successful for the following reason: " + status);
@@ -100,50 +109,60 @@
 
 		google.maps.event.addListener(marker, 'click', (function(marker, i) {
 			return function() {
-				infowindow.setContent(short_info);
+				infowindow.setContent(locations[i][0]);
 				infowindow.open(map, marker);
+				draw_info_window(i);
 			}
 		})(marker, i));
 		}
 	}
 	
 	//test function JSON parse
-	var printy = function(o){
+	function parse_match(o, matchy, lim1, lim2){
     var str='';
+	var result_matches = ["test"];
+    
+	for(var p in o){
 
-    for(var p in o){
         if(typeof o[p] == 'string'){
             str+= p + ': ' + o[p]+'; </br>';
-			if(p == match){
-				console.log(p+"\n");
+			if(p == matchy){
+				//console.log(p+"\n");
 				b_test = o[p]+"\n";
-				console.log(b_test);
-				break;
+				if(lim1 == "commander"){
+					b_test = b_test.substring(b_test.lastIndexOf("\/")+1,b_test.length);
+					b_test = b_test.split('_').join(' ');
+					result_query.push(b_test);
+					console.log(result_query);
+				}
+				else{
+					b_test = b_test.substring(b_test.indexOf(lim1)+1,b_test.lastIndexOf(lim2));
+					//console.log(b_test);
+					result_query.push(b_test);
+					console.log(result_query);
+				}
 			}
         }else{
-			if(p == match){
+			if(p == matchy){
 				console.log(p+"\n");
 				b_test = o[p]+"\n";
 				console.log(b_test);
-				break;
+				//result_matches.push(b_test);
 			}
-            str+= p + ': { </br>' + printy(o[p]) + '}';
+            str+= p + ': { </br>' + parse_match(o[p], matchy, lim1, lim2) + '}';
         }
+		
     }
 
-    return str;
+    return result_query;
 }
 	
 	
 	//draws more information about battle under the map
 	var img_test = "http://riverboatsmusic.com.au/wp-content/uploads/2014/09/1shuu4q3.wizardchan.test_.png"
 	//draws more information about battle under the map
-	function draw_info_window(){
-		//parameters to be filled:
-		var b_title = "Lorem Ipsum";
-		var b_summary = "if you see this text something somewhere went horribly wrong";
-		var b_img = img_test;
-		var b_commander = "John Doe";
+	function information_stash(){
+		
 		var b_weather = "<img src=\""+b_weather_rainy+"\" class=\"img-responsive\" alt=\"test\">";
 		//Call with query parameters
 		//should be range
@@ -155,46 +174,63 @@
 			//quick and dirty fix for reading in JSON with URL
 			//use match for the data to be matched to a certain URL
 			//test to check if JSON Data
-			console.log(printy(data));
+			//console.log(printy(data));
 			//Match to battle title:
-			match = "http://xmlns.com/foaf/0.1/name";
-			printy(data);
-			b_title = b_test;
-			var head = "<h2>"+b_title+"</h2>";
-			match = "http://dbpedia.org/ontology/date";
-			printy(data);
-			var year = b_test.substring(b_test.indexOf("\"")+1,b_test.lastIndexOf("+"));
-			var sub = "<h3>Date:"+year+"</h3>";
-			match = "http://dbpedia.org/ontology/commander";
-			printy(data);
+			//match = "http://xmlns.com/foaf/0.1/name";
+			//parse_match(data, "http://xmlns.com/foaf/0.1/name");
+			b_title = parse_match(data, "http://xmlns.com/foaf/0.1/name", "\"", "\"");
+			result_query = [];
+			console.log(b_title);
+			
+			year = parse_match(data, "http://dbpedia.org/ontology/date","\"" , "+" );
+			result_query = [];
+			
+			b_commander = parse_match(data,"http://dbpedia.org/ontology/commander", "commander", "+");
+			result_query = [];
+			b_summary = parse_match(data, "http://dbpedia.org/ontology/abstract", "\"", "\"");
+			result_query = [];
+			
+			
+			var lat = parse_match(data,"http://www.w3.org/2003/01/geo/wgs84_pos#lat", "\"", "\"");
+			console.log(lat);
+			result_query = [];
+			
+			var lng = parse_match(data,"http://www.w3.org/2003/01/geo/wgs84_pos#long", "\"", "\"");
+			result_query = [];
+			//short_info = b_title + ": "+year;
+			for (i = 0; i < b_title.length; i++){
+				console.log(lat[i]);
+				locations.push([b_title[i],lat[i], lng[i]]);
+			
+			}
+			console.log(locations);
+			draw_markers();
+			/*
+			//parse_match(data, match);
 			b_commander = b_test.substring(b_test.lastIndexOf("\/")+1,b_test.length);
-			var cond = "<br>Weather Condition: " +b_weather+"<br> Commanding Officer:"+b_commander+"<br>"; 
+			var cond = "Commanding Officer:"+b_commander+"<br>"; 
 			match = "http://dbpedia.org/ontology/abstract";
-			printy(data);
+			//parse_match(data, match);
 			var text = b_test;
 			text.replace(/^(http?:\/\/)?$/g,'');
 			match = "http://www.w3.org/2003/01/geo/wgs84_pos#lat";
-			printy(data);
+			//parse_match(data, match);
 			var lat = b_test.substring(b_test.indexOf("\"")+1,b_test.lastIndexOf("\""));
 			console.log(lat);
 			match = "http://www.w3.org/2003/01/geo/wgs84_pos#long";
-			printy(data);
+			//parse_match(data, match);
 			var lng = b_test.substring(b_test.indexOf("\"")+1,b_test.lastIndexOf("\""));
-			/*
-			text.replace(/http:\/\/dbpedia.org\/ontology\/-/g,'');
-			text.replace(/http:\/\/dbpedia.org\/property\/-/g,'');
-			text.replace(/http:\/\/www.w3.org\/2003\/01\/geo\/-/g,'');
-			text.replace(/http:\/\/www.w3.org\/2003\/01\/geo\/-/g,'');
-			text.replace(/http:\/\/purl.org\/dc\/terms\/-/g,'');
-			text.replace(/http:\/\/xmlns.com\/foaf\/0.1\/-/g,'');
-			*/
+				
+			
 			b_img = mediawiki(b_title);
 			var img = "<img src=\""+b_img+"\" class=\"img-responsive\" alt=\"test\" >";
 			var link = "<a href=\"" + tmp + "\"> source </a>";
 			document.getElementById("information_window").innerHTML = head+sub+cond+text+img+link;
 			short_info = b_title + ": "+year;
 			locations.push([short_info,lat,lng, 1]);
+			level = 3;
 			draw_markers();
+			*/
 		});
 				
 		/*
@@ -206,6 +242,16 @@
 		var img = "<img src=\""+b_img+"\" class=\"img-responsive\" alt=\"test\" >";
 		document.getElementById("information_window").innerHTML = head+sub+cond+text+img+link;
 		*/
+	}
+	
+	function draw_info_window(selection){
+		
+		var head = "<h2>"+b_title[selection]+"</h2>";
+		var sub = "<h3>Year:"+year[selection]+"</h3>";
+		var cond = "<br> Commanding Officer:"+b_commander[selection]+"<br>"; 
+		var text = b_summary[selection];
+		var img = "<img src=\""+b_img+"\" class=\"img-responsive\" alt=\"test\" >";
+		document.getElementById("information_window").innerHTML = head+sub+cond+text+img;
 	}
 	
 	//small function to print the value of the slider
