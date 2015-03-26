@@ -31,7 +31,6 @@
 		//test global
 		var match;
 		var result_query = [];
-		var n = -1;
 		
 		//parameters to be filled:
 		var b_title = [];
@@ -242,6 +241,8 @@
 		var img = "<img src=\""+b_img+"\" class=\"img-responsive\" alt=\"test\" >";
 		document.getElementById("information_window").innerHTML = head+sub+cond+text+img+link;
 		*/
+		
+		
 	}
 	
 	function draw_info_window(selection){
@@ -250,8 +251,31 @@
 		var sub = "<h3>Year:"+year[selection]+"</h3>";
 		var cond = "<br> Commanding Officer:"+b_commander[selection]+"<br>"; 
 		var text = b_summary[selection];
+		
+		//comment me out to work:
+		//test code here:
+		var tmp;
+		/*globals MediaWikiJS*/
+		var mwjs = new MediaWikiJS('https://en.wikipedia.org', {action: 'query', prop: 'images', titles: b_title[i]}, function (data) {
+			'use strict';
+		   var pages = data.query.pages;
+		   console.log(pages[Object.keys(pages)[0]].images[0]);
+		   tmp = (pages[Object.keys(pages)[0]].images[0].title);
+		   console.log(tmp);
+		   var query = "imageinfo&&iiprop=url";
+		   var mwjs = new MediaWikiJS('https://en.wikipedia.org', {action: 'query', prop: query, titles: tmp}, function (data) {
+				//'use strict';
+				console.log(tmp);
+				var pages = data.query.pages;
+				console.log(pages[Object.keys(pages)[0]].imageinfo[0].url);
+				b_img = (pages[Object.keys(pages)[0]].imageinfo[0].url);
+			});
+		});
+		
 		var img = "<img src=\""+b_img+"\" class=\"img-responsive\" alt=\"test\" >";
+		//and stop commenting here
 		document.getElementById("information_window").innerHTML = head+sub+cond+text+img;
+		//console.log(b_img);
 	}
 	
 	//small function to print the value of the slider
@@ -305,39 +329,6 @@
 		
 	}
 	
-	//test code here:
-	var wikipediaHTMLResult = function(data) {
-		var readData = $('<div>' + data.parse.text["*"] + '</div>');
-		// handle redirects
-		var redirect = readData.find('li:contains("REDIRECT") a').text();
-		if(redirect != '') {
-			callWikipediaAPI(redirect);
-			return;
-		}
-		var box = readData.find('.infobox');
-		var binomialName = box.find('.binomial').text();
-		var fishName = box.find('th').first().text();
-		var imageURL = null;
-		// Check if page has images
-		if(data.parse.images.length >= 1) {
-			imageURL = box.find('img').first().attr('src');
-		}
-			$('#insertTest').append('<div><img src="'+ imageURL + '"/>'+ fishName +' <i>('+ binomialName +')</i></div>');
-		};
-		function callWikipediaAPI(wikipediaPage) {
-		// http://www.mediawiki.org/wiki/API:Parsing_wikitext#parse
-		$.getJSON('http://en.wikipedia.org/w/api.php?action=parse&format=json&callback=?', {page:wikipediaPage, prop:'text|images', uselang:'en'}, wikipediaHTMLResult);
-	}
-	
-	function mediawiki(term){
-		req_str = "http://en.wikipedia.org/w/api.php?action=query&titles="+term+"&prop=images&imlimit=20&format=json";
-		var img;
-		$.getJSON(req_str, function(data){
-			img = data.query;
-			console.log(img);
-		});
-		return img;
-	}
 	
 
 </script>

@@ -8,7 +8,7 @@
 <title>History Mashup</title>
 <link rel="shortcut icon" type="image/gif" href="http://static.wfu.edu/images/students/scroll_icon.gif"/>
 <script type="text/javascript" src="/lib/jquery-1.11.2.min.js"></script>
-<script type="text/javascript" src="/lib/MediawikiJS.js"></script>
+<script type="text/javascript" src="MediawikiJS.js"></script>
 </head>
 <body>
 
