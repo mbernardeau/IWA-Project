@@ -13,6 +13,92 @@
   <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
   <script src="http://maps.googleapis.com/maps/api/js"></script>
 <script>
+	//hotfix mediawiki api:
+	(function () {'use strict';
+
+		/**
+		* @static
+		* @private
+		*/
+		var JSONP = (function (global) {
+			// (C) WebReflection Essential - Mit Style
+			// cleaned up by Brett Zamir for JSLint and avoiding additional globals and need for conventional [?&]callback= in URL)
+			// 'use strict'; // Added above
+			var id = 0,
+				ns = 'MediaWikiJS',
+				prefix = '__JSONP__',
+				document = global.document,
+				documentElement = document.documentElement;
+			return function (uri, callback) {
+				var src = prefix + id++,
+					script = document.createElement('script'),
+					JSONPResponse = function () {
+						try { delete global[ns][src]; } catch(e) { global[ns][src] = null; }
+						documentElement.removeChild(script);
+						callback.apply(this, arguments);
+					};
+				global[ns][src] = JSONPResponse;
+				documentElement.insertBefore(
+					script,
+					documentElement.lastChild
+				).src = uri + (uri.indexOf('?') > -1 ? '&' : '?') + 'callback=' + ns + '.' + src;
+			};
+		}(window));
+
+		/**
+		* @constructor
+		* @param {object|string} opts The options (currently "baseURL" and "apiPath" args only); if a string is supplied, it will be used as the baseURL
+		* @param {object} argObj Object of key-value pairs to be serialized
+		* @param {function} cb The callback to execute upon server (JSONP) reply
+		*/
+		function MediaWikiJS(opts, argObj, cb) {
+			if (!(this instanceof MediaWikiJS)) {
+				return new MediaWikiJS(opts, argObj, cb);
+			}
+			if (typeof opts === 'string') {
+				this.baseURL = opts;
+			}
+			else {
+				this.apiPath = opts.apiPath;
+				this.baseURL = opts.baseURL;
+			}
+			if (!this.apiPath) {
+				this.apiPath = '/w/api.php';
+			}
+			if (argObj) {
+				this.send(argObj, cb);
+			}
+		}
+
+		/**
+		* Send the API request to the server
+		* @param {object} argObj Object of arguments to be serialized
+		* @param {function} cb The callback to execute upon server (JSONP) reply
+		*/
+		MediaWikiJS.prototype.send = function MediaWikiJS__send (argObj, cb) {
+			cb = cb || function () {}; // Are there API calls with side effects?
+			var uri, arg, args = '';
+			for (arg in argObj) {
+				if (argObj.hasOwnProperty(arg)) {
+					if(arg == "prop")
+					{
+						console.log("dick");
+						args += '&' + arg + '=' + argObj[arg];
+					}
+					else{
+						args += '&' + arg + '=' + encodeURIComponent(argObj[arg]);
+					}
+					console.log(args);
+				}
+			}
+			uri = this.baseURL +  this.apiPath + '?format=json' + args;
+			console.log(uri);
+			JSONP(uri, cb);
+		};
+
+		// EXPORTS
+		window.MediaWikiJS = MediaWikiJS;
+		}());
 	//Globals: Geocoder, Map are for Google API
 	//short_info is a small description in the marker
 	//more_info is a button that calls the draw_info_window function for the window under the map
@@ -36,7 +122,7 @@
 		var b_title = [];
 		var year = [];
 		var b_summary = [];
-		var b_img = img_test;
+		var b_img;
 		var b_commander = [];
 		
 		/*
@@ -256,7 +342,7 @@
 		//test code here:
 		var tmp;
 		/*globals MediaWikiJS*/
-		var mwjs = new MediaWikiJS('https://en.wikipedia.org', {action: 'query', prop: 'images', titles: b_title[i]}, function (data) {
+		var mwjs = new MediaWikiJS('https://en.wikipedia.org', {action: 'query', prop: 'images', titles: b_title[selection]}, function (data) {
 			'use strict';
 		   var pages = data.query.pages;
 		   console.log(pages[Object.keys(pages)[0]].images[0]);
@@ -267,15 +353,16 @@
 				//'use strict';
 				console.log(tmp);
 				var pages = data.query.pages;
-				console.log(pages[Object.keys(pages)[0]].imageinfo[0].url);
+				//console.log(pages[Object.keys(pages)[0]].imageinfo[0].url);
 				b_img = (pages[Object.keys(pages)[0]].imageinfo[0].url);
+				console.log(b_img);
+				var img = "<img src=\""+b_img+"\" class=\"img-responsive\" alt=\"test\" >";
+				//and stop commenting here
+				document.getElementById("information_window").innerHTML = head+sub+cond+text+img;
+				//console.log(b_img);
 			});
 		});
 		
-		var img = "<img src=\""+b_img+"\" class=\"img-responsive\" alt=\"test\" >";
-		//and stop commenting here
-		document.getElementById("information_window").innerHTML = head+sub+cond+text+img;
-		//console.log(b_img);
 	}
 	
 	//small function to print the value of the slider
